@@ -162,7 +162,7 @@ def run_test(wsi_path: str = "data/S114-82742C-Her2(4B5) 20x.tiff"):
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
     dataset = WSISlidingWindowDataset(wsi_path=wsi_path, patch_size=1024, stride=1024,
-                                      transform=transform, verbose=False)
+                                      transform=transform, verbose=True)
     print(f"\n[*] Total tissue patches: {len(dataset)}")
     if len(dataset) > 0:
         patch, coords = dataset[0]
