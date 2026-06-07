@@ -5,7 +5,7 @@ Proves the speedup hierarchy v0a -> v0b -> (best GPU) is real and measurable,
 and that every version preserves filtering correctness. This is the gate the
 rest of the study stands on.
 
-    python test_00_baseline_comparison.py --stride 2048 --iterations 3
+    python test_00_baseline_comparison.py --stride 1024 --iterations 3
 """
 import argparse
 
@@ -18,7 +18,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--wsi", default=DEFAULT_WSI)
     ap.add_argument("--patch-size", type=int, default=1024)
-    ap.add_argument("--stride", type=int, default=2048)
+    ap.add_argument("--stride", type=int, default=1024)
     ap.add_argument("--iterations", type=int, default=3)
     args = ap.parse_args()
 

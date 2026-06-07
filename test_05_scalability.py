@@ -5,7 +5,7 @@ Varies patch size (and stride to match) and measures how grid-creation time and
 throughput scale for the CPU baselines vs a representative GPU version. Reveals
 how the compute/I-O balance shifts as the per-patch work grows.
 
-    python test_05_scalability.py --sizes 256,512,1024 \
+    python test_05_scalability.py --sizes 256,512,1024 --stride-factor 1.0 \
         --versions v0a_mono,v0b_multi,v2_batch
 """
 import argparse
@@ -20,8 +20,8 @@ def main():
     ap.add_argument("--sizes", default="256,512,1024")
     ap.add_argument("--versions", default="v0a_mono,v0b_multi,v2_batch")
     ap.add_argument("--iterations", type=int, default=2)
-    ap.add_argument("--stride-factor", type=float, default=4.0,
-                    help="stride = patch_size * factor (controls candidate count)")
+    ap.add_argument("--stride-factor", type=float, default=1.0,
+                    help="stride = patch_size * factor (1.0 = non-overlapping, production-realistic)")
     args = ap.parse_args()
 
     sizes = [int(s) for s in args.sizes.split(",")]

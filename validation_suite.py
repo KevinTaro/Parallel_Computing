@@ -11,7 +11,7 @@ Three checks:
   3. Transform pipeline   -- __getitem__ returns a correctly shaped tensor.
 
 Run:
-    python validation_suite.py                       # smallest slide, stride 2048
+    python validation_suite.py                       # smallest slide, stride 1024
     python validation_suite.py --wsi ... --stride 1024
 """
 import argparse
@@ -120,7 +120,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--wsi", default=DEFAULT_WSI)
     ap.add_argument("--patch-size", type=int, default=1024)
-    ap.add_argument("--stride", type=int, default=2048)
+    ap.add_argument("--stride", type=int, default=1024)
     args = ap.parse_args()
 
     print("=" * 70)

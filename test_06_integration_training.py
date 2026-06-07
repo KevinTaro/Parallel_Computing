@@ -7,7 +7,7 @@ fraction of training is spent waiting on the data pipeline. This is the bottom
 line: filtering strategy only matters at the margin if data loading already
 dominates the step.
 
-    python test_06_integration_training.py --stride 2048 --iters 20 --batch 4
+    python test_06_integration_training.py --stride 1024 --iters 20 --batch 4
 """
 import argparse
 import time
@@ -40,7 +40,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--wsi", default=DEFAULT_WSI)
     ap.add_argument("--patch-size", type=int, default=1024)
-    ap.add_argument("--stride", type=int, default=2048)
+    ap.add_argument("--stride", type=int, default=1024)
     ap.add_argument("--iters", type=int, default=20)
     ap.add_argument("--batch", type=int, default=4)
     ap.add_argument("--workers", type=int, default=2)

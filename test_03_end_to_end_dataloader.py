@@ -10,7 +10,7 @@ __init__ (Phases 0-2). So this phase characterizes the shared data-loading
 cost and how DataLoader parallelism helps, using the v0a dataset to provide the
 coordinate list.
 
-    python test_03_end_to_end_dataloader.py --stride 2048 --n 100
+    python test_03_end_to_end_dataloader.py --stride 1024 --n 100
 """
 import argparse
 import time
@@ -26,7 +26,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--wsi", default=DEFAULT_WSI)
     ap.add_argument("--patch-size", type=int, default=1024)
-    ap.add_argument("--stride", type=int, default=2048)
+    ap.add_argument("--stride", type=int, default=1024)
     ap.add_argument("--n", type=int, default=100)
     args = ap.parse_args()
 
