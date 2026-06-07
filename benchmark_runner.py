@@ -5,11 +5,11 @@ Run timing benchmarks across data-loader versions and emit a report.
 
 CLI
 ---
-    python benchmark_runner.py --wsi data/slide.tiff --stride 2048 \
+    python benchmark_runner.py --wsi data/slide.tiff --stride 1024 \
         --iterations 3 --versions v0a_mono,v0b_multi,v2_batch,v3_hybrid
 
-    # all versions, default (smallest) slide, quick stride:
-    python benchmark_runner.py --stride 4096
+    # all versions, default (smallest) slide, production stride:
+    python benchmark_runner.py --stride 1024
 
 Outputs:
     results/benchmark_<timestamp>.json   (always)
@@ -119,7 +119,7 @@ def main():
     ap = argparse.ArgumentParser(description="WSI data-loader benchmark runner")
     ap.add_argument("--wsi", default=DEFAULT_WSI)
     ap.add_argument("--patch-size", type=int, default=1024)
-    ap.add_argument("--stride", type=int, default=2048)
+    ap.add_argument("--stride", type=int, default=1024)
     ap.add_argument("--iterations", type=int, default=3)
     ap.add_argument("--versions", default="all",
                     help="comma-separated keys or 'all' / 'cpu' / 'gpu'")

@@ -9,7 +9,7 @@ Relevant because the test GPU has only 3 GB: v2's uint32 grayscale temporary is
 4x the input batch, while v7's fused uint8 kernel + small chunks keep the
 footprint tiny.
 
-    python test_04_memory_profiling.py --stride 2048
+    python test_04_memory_profiling.py --stride 1024
 """
 import argparse
 import threading
@@ -47,7 +47,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--wsi", default=DEFAULT_WSI)
     ap.add_argument("--patch-size", type=int, default=1024)
-    ap.add_argument("--stride", type=int, default=2048)
+    ap.add_argument("--stride", type=int, default=1024)
     args = ap.parse_args()
 
     print("=" * 80)

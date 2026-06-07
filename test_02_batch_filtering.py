@@ -6,7 +6,7 @@ yields increasing candidate-patch counts. Reports throughput (patches/sec) per
 version so the break-even point -- where a GPU version overtakes the CPU
 baselines -- becomes visible, and confirms every version still agrees with v0a.
 
-    python test_02_batch_filtering.py --strides 8192,4096,2048 \
+    python test_02_batch_filtering.py --strides 4096,2048,1024 \
         --versions v0a_mono,v0b_multi,v2_batch,v4_pinned,v7_memopt
 """
 import argparse
@@ -29,7 +29,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--wsi", default=DEFAULT_WSI)
     ap.add_argument("--patch-size", type=int, default=1024)
-    ap.add_argument("--strides", default="8192,4096,2048")
+    ap.add_argument("--strides", default="4096,2048,1024")
     ap.add_argument("--versions", default="v0a_mono,v0b_multi,v2_batch,v4_pinned,v7_memopt")
     ap.add_argument("--iterations", type=int, default=2)
     args = ap.parse_args()
