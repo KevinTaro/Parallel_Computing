@@ -38,7 +38,7 @@ class WSISlidingWindowDataset(Dataset):
                  black_pixel_threshold: int = 25,
                  rejection_ratio: float = 0.9,
                  num_workers: Optional[int] = None,
-                 verbose: bool = True):
+                 verbose: bool = False):
         self.wsi_path = wsi_path
         self.patch_size = patch_size
         self.stride = stride
@@ -162,7 +162,7 @@ def run_test(wsi_path: str = "data/S114-82742C-Her2(4B5) 20x.tiff"):
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
     dataset = WSISlidingWindowDataset(wsi_path=wsi_path, patch_size=1024, stride=1024,
-                                      transform=transform, verbose=True)
+                                      transform=transform, verbose=False)
     print(f"\n[*] Total tissue patches: {len(dataset)}")
     if len(dataset) > 0:
         patch, coords = dataset[0]
