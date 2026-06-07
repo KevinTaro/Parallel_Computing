@@ -180,7 +180,7 @@ def run_test():
     """
     Example of how to use the dataset, demonstrating the new high-precision filtering.
     """
-    WSI_PATH = "data/raw_wsi/S114-82742C-Her2(4B5) 20x.tiff"
+    WSI_PATH = "data/S114-82742C-Her2(4B5) 20x.tiff"
 
     try:
         print("=====================================================")
