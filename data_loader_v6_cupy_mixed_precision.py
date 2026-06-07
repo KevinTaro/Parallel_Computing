@@ -68,6 +68,7 @@ class WSISlidingWindowDataset(Dataset):
         self.rejection_ratio = rejection_ratio
         self.batch_size = batch_size
         self.verbose = verbose
+        self.kernel_time = 0.0
 
         if self.verbose:
             print(f"[*] Initializing dataset for WSI: {self.wsi_path}")
@@ -102,13 +103,23 @@ class WSISlidingWindowDataset(Dataset):
 
     def _filter_batch(self, batch_rgb: np.ndarray) -> np.ndarray:
         total_pixels = self.patch_size * self.patch_size
+        e_start = cp.cuda.Event()
+        e_end = cp.cuda.Event()
+        e_start.record()
+
         gpu = cp.asarray(batch_rgb)
         gray = gpu_grayscale_fp16(gpu)
         # Threshold comparisons promote to a common type; counts stay exact ints.
         white_ratio = cp.sum(gray > self.white_pixel_threshold, axis=(1, 2)).astype(cp.float64) / total_pixels
         black_ratio = cp.sum(gray < self.black_pixel_threshold, axis=(1, 2)).astype(cp.float64) / total_pixels
         keep = (white_ratio < self.rejection_ratio) & (black_ratio < self.rejection_ratio)
-        return cp.asnumpy(keep)
+        result = cp.asnumpy(keep)
+
+        e_end.record()
+        e_end.synchronize()
+        self.kernel_time += cp.cuda.get_elapsed_time(e_start, e_end) / 1000.0
+
+        return result
 
     def _create_grid(self) -> List[Tuple[int, int]]:
         potential_coords = self._generate_candidate_coords()

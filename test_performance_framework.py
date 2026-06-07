@@ -35,6 +35,7 @@ IMPLEMENTATIONS: Dict[str, dict] = {
     "v5_async":   dict(module="data_loader_v5_cupy_async",           category="gpu", kwargs={"batch_size": 32}),
     "v6_mixed":   dict(module="data_loader_v6_cupy_mixed_precision", category="gpu", kwargs={"batch_size": 32}),
     "v7_memopt":  dict(module="data_loader_v7_cupy_memory_optimized", category="gpu", kwargs={"chunk_size": 8}),
+    "v8_4060":    dict(module="data_loader_v8_cupy_optimized_4060",   category="gpu", kwargs={"batch_size": 128}),
 }
 
 CLASS_NAME = "WSISlidingWindowDataset"
@@ -83,6 +84,7 @@ class PerformanceMetrics:
     n_candidates: int = 0
     n_kept: int = 0
     times: List[float] = field(default_factory=list)
+    kernel_times: List[float] = field(default_factory=list)
     peak_gpu_bytes: int = 0
     extra: dict = field(default_factory=dict)
 
@@ -103,6 +105,14 @@ class PerformanceMetrics:
         return max(self.times) if self.times else float("nan")
 
     @property
+    def kernel_mean(self) -> float:
+        return statistics.mean(self.kernel_times) if self.kernel_times else float("nan")
+
+    @property
+    def kernel_min(self) -> float:
+        return min(self.kernel_times) if self.kernel_times else float("nan")
+
+    @property
     def throughput(self) -> float:
         """Candidate patches filtered per second (uses best/min time)."""
         return self.n_candidates / self.min if self.times and self.min > 0 else 0.0
@@ -111,6 +121,13 @@ class PerformanceMetrics:
         return (f"{self.version:11s} | mean {self.mean:7.3f}s  min {self.min:7.3f}s  "
                 f"std {self.std:6.3f}  | kept {self.n_kept}/{self.n_candidates} | "
                 f"{self.throughput:7.1f} patch/s | peak {self.peak_gpu_bytes/1e6:6.1f}MB")
+
+    def summary_with_kernel(self) -> str:
+        if not self.kernel_times:
+            return self.summary()
+        kernel_pct = (self.kernel_min / self.min * 100) if self.min > 0 else 0
+        return (f"{self.version:11s} | total {self.min:7.3f}s  kernel {self.kernel_min:7.3f}s "
+                f"({kernel_pct:5.1f}%) | peak {self.peak_gpu_bytes/1e6:6.1f}MB")
 
 
 class CuPyTester:
@@ -151,6 +168,8 @@ class CuPyTester:
             t0 = time.perf_counter()
             ds = self.build(version, **overrides)
             metrics.times.append(time.perf_counter() - t0)
+            if hasattr(ds, "kernel_time"):
+                metrics.kernel_times.append(ds.kernel_time)
             n_kept = len(ds.coordinates)
             peak = max(peak, get_gpu_memory_used(),
                        getattr(ds, "peak_gpu_bytes", 0))
@@ -199,7 +218,10 @@ class BenchmarkRunner:
             overrides = per_version_overrides.get(v, {})
             print(f"  -> timing {v} ...", flush=True)
             results[v] = self.tester.time_grid_creation(v, iterations=iterations, **overrides)
-            print("     " + results[v].summary(), flush=True)
+            if results[v].kernel_times:
+                print("     " + results[v].summary_with_kernel(), flush=True)
+            else:
+                print("     " + results[v].summary(), flush=True)
         return results
 
 

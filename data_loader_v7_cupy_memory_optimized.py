@@ -64,6 +64,7 @@ class WSISlidingWindowDataset(Dataset):
         self.chunk_size = chunk_size
         self.verbose = verbose
         self.peak_gpu_bytes = 0
+        self.kernel_time = 0.0
 
         if self.verbose:
             print(f"[*] Initializing dataset for WSI: {self.wsi_path}")
@@ -127,6 +128,10 @@ class WSISlidingWindowDataset(Dataset):
                 if n == 0:
                     continue
 
+                e_start = cp.cuda.Event()
+                e_end = cp.cuda.Event()
+                e_start.record()
+
                 sub = device_in[:n]
                 # Fused grayscale into the preallocated buffer (no uint32 temp).
                 _luma_kernel(sub[..., 0], sub[..., 1], sub[..., 2], gray_buf[:n])
@@ -134,6 +139,10 @@ class WSISlidingWindowDataset(Dataset):
                 white_ratio = cp.count_nonzero(gray > self.white_pixel_threshold, axis=(1, 2)).astype(cp.float64) / total_pixels
                 black_ratio = cp.count_nonzero(gray < self.black_pixel_threshold, axis=(1, 2)).astype(cp.float64) / total_pixels
                 keep = cp.asnumpy((white_ratio < self.rejection_ratio) & (black_ratio < self.rejection_ratio))
+
+                e_end.record()
+                e_end.synchronize()
+                self.kernel_time += cp.cuda.get_elapsed_time(e_start, e_end) / 1000.0
 
                 for (x, y), k in zip(valid_coords, keep):
                     if k:

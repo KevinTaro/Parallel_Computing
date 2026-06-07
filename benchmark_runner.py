@@ -71,6 +71,25 @@ def generate_performance_report(results: Dict[str, PerformanceMetrics],
     return "\n".join(lines)
 
 
+def generate_kernel_timing_report(results: Dict[str, PerformanceMetrics]) -> str:
+    """Report pure kernel times vs total times (overhead analysis)."""
+    lines = []
+    lines.append("=" * 100)
+    lines.append(f"{'version':11s} | {'total(s)':>8s} | {'kernel(s)':>8s} | {'kernel%':>7s} | {'overhead(s)':>10s} | {'vs CPU':>7s}")
+    lines.append("-" * 100)
+    for v, m in results.items():
+        if not m.kernel_times:
+            lines.append(f"{v:11s} | {m.min:8.3f} | {'N/A':>8s} | {'N/A':>7s} | {'N/A':>10s} | {'N/A':>7s}")
+        else:
+            kernel = m.kernel_min
+            total = m.min
+            overhead = total - kernel
+            kernel_pct = (kernel / total * 100) if total > 0 else 0
+            lines.append(f"{v:11s} | {total:8.3f} | {kernel:8.3f} | {kernel_pct:7.1f}% | {overhead:10.3f} | {''}")
+    lines.append("=" * 100)
+    return "\n".join(lines)
+
+
 def plot_results(results: Dict[str, PerformanceMetrics], out_path: str,
                  baseline: str = "v0a_mono") -> Optional[str]:
     """Bar chart of speedup vs baseline. Returns path, or None if no matplotlib."""
@@ -141,6 +160,11 @@ def main():
                                         stride=args.stride, iterations=args.iterations)
     report = generate_performance_report(results)
     print("\n" + report)
+
+    has_kernel = any(m.kernel_times for m in results.values())
+    if has_kernel:
+        kernel_report = generate_kernel_timing_report(results)
+        print("\n" + kernel_report)
 
     os.makedirs(RESULTS_DIR, exist_ok=True)
     ts = time.strftime("%Y%m%d_%H%M%S")

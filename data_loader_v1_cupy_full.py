@@ -65,6 +65,7 @@ class WSISlidingWindowDataset(Dataset):
         self.black_pixel_threshold = black_pixel_threshold
         self.rejection_ratio = rejection_ratio
         self.verbose = verbose
+        self.kernel_time = 0.0
 
         if self.verbose:
             print(f"[*] Initializing dataset for WSI: {self.wsi_path}")
@@ -100,13 +101,24 @@ class WSISlidingWindowDataset(Dataset):
     def _keep_patch(self, rgba_np: np.ndarray) -> bool:
         """Run the full grayscale + ratio decision on the GPU for one patch."""
         total_pixels = self.patch_size * self.patch_size
+        e_start = cp.cuda.Event()
+        e_end = cp.cuda.Event()
+        e_start.record()
+
         rgb_gpu = cp.asarray(rgba_np[:, :, :3])          # host -> device
         gray = gpu_grayscale_uint8(rgb_gpu)              # GPU grayscale
-
         white_ratio = float(cp.sum(gray > self.white_pixel_threshold)) / total_pixels
         if white_ratio >= self.rejection_ratio:
+            e_end.record()
+            e_end.synchronize()
+            self.kernel_time += cp.cuda.get_elapsed_time(e_start, e_end) / 1000.0
             return False
         black_ratio = float(cp.sum(gray < self.black_pixel_threshold)) / total_pixels
+
+        e_end.record()
+        e_end.synchronize()
+        self.kernel_time += cp.cuda.get_elapsed_time(e_start, e_end) / 1000.0
+
         if black_ratio >= self.rejection_ratio:
             return False
         return True

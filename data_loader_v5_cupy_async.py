@@ -76,6 +76,7 @@ class WSISlidingWindowDataset(Dataset):
         self.batch_size = batch_size
         self.num_streams = max(2, num_streams)
         self.verbose = verbose
+        self.kernel_time = 0.0
 
         if self.verbose:
             print(f"[*] Initializing dataset for WSI: {self.wsi_path}")
@@ -112,12 +113,16 @@ class WSISlidingWindowDataset(Dataset):
         """Issue the async transfer + filter for the n patches staged in a slot."""
         total_pixels = self.patch_size * self.patch_size
         stream = slot['stream']
+        slot['e_start'] = cp.cuda.Event()
+        slot['e_end'] = cp.cuda.Event()
+        slot['e_start'].record()
         with stream:
             slot['device'][:n].set(slot['pinned'][:n], stream=stream)
             gray = gpu_grayscale_uint8(slot['device'][:n])
             white_ratio = cp.sum(gray > self.white_pixel_threshold, axis=(1, 2)).astype(cp.float64) / total_pixels
             black_ratio = cp.sum(gray < self.black_pixel_threshold, axis=(1, 2)).astype(cp.float64) / total_pixels
             slot['keep_gpu'] = (white_ratio < self.rejection_ratio) & (black_ratio < self.rejection_ratio)
+        slot['e_end'].record()
 
     def _create_grid(self) -> List[Tuple[int, int]]:
         potential_coords = self._generate_candidate_coords()
@@ -136,6 +141,7 @@ class WSISlidingWindowDataset(Dataset):
                 'keep_gpu': None,
                 'coords': None,
                 'busy': False,
+                'e_end': None,
             })
 
         coordinates = []
@@ -145,6 +151,9 @@ class WSISlidingWindowDataset(Dataset):
             if not slot['busy']:
                 return
             slot['stream'].synchronize()
+            if slot['e_end']:
+                slot['e_end'].synchronize()
+                self.kernel_time += cp.cuda.get_elapsed_time(slot['e_start'], slot['e_end']) / 1000.0
             keep_host = cp.asnumpy(slot['keep_gpu'])
             for (x, y), k in zip(slot['coords'], keep_host):
                 if k:

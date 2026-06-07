@@ -70,6 +70,7 @@ class WSISlidingWindowDataset(Dataset):
         self.rejection_ratio = rejection_ratio
         self.batch_size = batch_size
         self.verbose = verbose
+        self.kernel_time = 0.0
 
         if self.verbose:
             print(f"[*] Initializing dataset for WSI: {self.wsi_path}")
@@ -134,6 +135,10 @@ class WSISlidingWindowDataset(Dataset):
                 if n == 0:
                     continue
 
+                e_start = cp.cuda.Event()
+                e_end = cp.cuda.Event()
+                e_start.record()
+
                 with stream:
                     # Async pinned host -> device copy, then compute on the stream.
                     device_buf[:n].set(pinned_host[:n], stream=stream)
@@ -143,6 +148,9 @@ class WSISlidingWindowDataset(Dataset):
                     keep = (white_ratio < self.rejection_ratio) & (black_ratio < self.rejection_ratio)
                     keep_host = cp.asnumpy(keep)
                 stream.synchronize()
+                e_end.record()
+                e_end.synchronize()
+                self.kernel_time += cp.cuda.get_elapsed_time(e_start, e_end) / 1000.0
 
                 for (x, y), k in zip(valid_coords, keep_host):
                     if k:
