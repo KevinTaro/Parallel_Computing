@@ -36,6 +36,7 @@ IMPLEMENTATIONS: Dict[str, dict] = {
     "v6_mixed":   dict(module="data_loader_v6_cupy_mixed_precision", category="gpu", kwargs={"batch_size": 32}),
     "v7_memopt":  dict(module="data_loader_v7_cupy_memory_optimized", category="gpu", kwargs={"chunk_size": 8}),
     "v8_4060":    dict(module="data_loader_v8_cupy_optimized_4060",   category="gpu", kwargs={"batch_size": 128}),
+    "v9_ultimate": dict(module="data_loader_v9_ultimate_gpu",          category="gpu", kwargs={"batch_size": 64}),
 }
 
 CLASS_NAME = "WSISlidingWindowDataset"
