@@ -10,14 +10,14 @@ wall time is CPU-side TIFF decode in ``slide.read_region``. So v8 attacks the
   1. **Threaded patch decode**: a pool of reader threads (one OpenSlide handle
      each -- libopenslide releases the GIL) fills the pinned staging buffer in
      parallel. This is where the real speedup over v1/v2 comes from.
-  2. **Large batches**: batch_size=512 (~2 GiB RGBA on device) -- the 8 GB
+  2. **Large batches**: batch_size=512 (~1.5 GiB RGB on device) -- the 8 GB
      card allows it, and bigger batches amortise transfer + launch overhead.
   3. **Pinned host memory**: page-locked staging buffer, DMA transfer.
   4. **Fused uint8 luma kernel**: no 4x uint32 grayscale temporary.
 
-Peak VRAM at bs=512: ~2 GiB device input + ~0.5 GiB grayscale = ~2.6 GiB.
+Peak VRAM at bs=512: ~1.5 GiB device input + ~0.5 GiB grayscale = ~2.0 GiB.
 Note ``peak_gpu_bytes`` reports the CuPy *device pool* (VRAM); the pinned
-staging buffer (~2 GiB at bs=512) lives in host RAM and is not counted.
+staging buffer (~1.5 GiB at bs=512) lives in host RAM and is not counted.
 
 Arithmetic is identical to v0a/v2/v7 (same PIL luma formula).
 """
@@ -114,9 +114,9 @@ class WSISlidingWindowDataset(Dataset):
                     potential_coords.append((x, y))
         return potential_coords
 
-    def _filter_batch_gpu(self, batch_rgba_gpu: cp.ndarray) -> np.ndarray:
-        """Filter a batch already on GPU. Input is (N, H, W, 4) RGBA cp.ndarray."""
-        n = batch_rgba_gpu.shape[0]
+    def _filter_batch_gpu(self, batch_rgb_gpu: cp.ndarray) -> np.ndarray:
+        """Filter a batch already on GPU. Input is (N, H, W, 3) RGB cp.ndarray."""
+        n = batch_rgb_gpu.shape[0]
         total_pixels = self.patch_size * self.patch_size
         e_start = cp.cuda.Event()
         e_end = cp.cuda.Event()
@@ -124,7 +124,7 @@ class WSISlidingWindowDataset(Dataset):
 
         # Fused kernel directly on the GPU buffer — zero extra host→device transfer.
         gray = cp.empty((n, self.patch_size, self.patch_size), dtype=cp.uint8)
-        _luma_kernel(batch_rgba_gpu[..., 0], batch_rgba_gpu[..., 1], batch_rgba_gpu[..., 2], gray)
+        _luma_kernel(batch_rgb_gpu[..., 0], batch_rgb_gpu[..., 1], batch_rgb_gpu[..., 2], gray)
 
         white_counts = cp.count_nonzero(gray > self.white_pixel_threshold, axis=(1, 2))
         black_counts = cp.count_nonzero(gray < self.black_pixel_threshold, axis=(1, 2))
@@ -132,7 +132,6 @@ class WSISlidingWindowDataset(Dataset):
         black_ratio = black_counts.astype(cp.float64) / total_pixels
 
         keep = (white_ratio < self.rejection_ratio) & (black_ratio < self.rejection_ratio)
-        # Sample peak while gray + temporaries are still alive (honest peak).
         self.peak_gpu_bytes = max(self.peak_gpu_bytes,
                                   cp.get_default_memory_pool().used_bytes())
         result = cp.asnumpy(keep)
@@ -170,13 +169,13 @@ class WSISlidingWindowDataset(Dataset):
         # filter, then releases the buffer back to the producer. Only ONE device
         # buffer is reused serially, so VRAM is unchanged.
         #
-        # n_buf=2 is optimal here: each pinned buffer is ~2 GiB and page-locked
+        # n_buf=2 is optimal here: each pinned buffer is ~1.5 GiB and page-locked
         # allocation is counted in grid_creation_time, so n_buf=3/4 measured
         # *slower* (8.1/8.3s vs 7.8s) -- the extra alloc cost outweighs the tiny
         # extra runway. 2 buffers already keep the readers saturated because the
         # consumer (transfer+GPU, ~0.2s/batch) is far faster than a batch decode.
-        pinned_hosts = [_alloc_pinned((bs, ps, ps, 4), np.uint8) for _ in range(n_buf)]
-        device_buf = cp.empty((bs, ps, ps, 4), dtype=cp.uint8)
+        pinned_hosts = [_alloc_pinned((bs, ps, ps, 3), np.uint8) for _ in range(n_buf)]
+        device_buf = cp.empty((bs, ps, ps, 3), dtype=cp.uint8)
         xfer_stream = cp.cuda.Stream(non_blocking=True)
 
         # Reader threads each own an OpenSlide handle (handles are cheap;
@@ -194,7 +193,7 @@ class WSISlidingWindowDataset(Dataset):
                 with handles_lock:
                     handles.append(slide)
             try:
-                buf[slot] = np.asarray(slide.read_region((x, y), 0, (ps, ps)))
+                buf[slot] = np.asarray(slide.read_region((x, y), 0, (ps, ps)))[:, :, :3]
                 return True
             except Exception as e:
                 if self.verbose:
