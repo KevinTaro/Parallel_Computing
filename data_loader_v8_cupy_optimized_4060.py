@@ -48,9 +48,16 @@ _luma_kernel = cp.ElementwiseKernel(
 
 
 def _alloc_pinned(shape, dtype=np.uint8) -> np.ndarray:
-    """Allocate page-locked host memory for DMA."""
-    mem = cp.cuda.alloc_pinned_memory(np.prod(shape) * np.dtype(dtype).itemsize)
-    return np.frombuffer(mem, dtype=dtype).reshape(shape)
+    """Allocate page-locked host memory for DMA.
+
+    ``alloc_pinned_memory`` rounds the request up (often to a power of two), so
+    the returned block can be larger than ``prod(shape)``. ``count=`` caps the
+    view at exactly the elements we asked for, otherwise the reshape fails on
+    the padding (e.g. a 1.5 GiB RGB request is backed by a 2 GiB block).
+    """
+    count = int(np.prod(shape))
+    mem = cp.cuda.alloc_pinned_memory(count * np.dtype(dtype).itemsize)
+    return np.frombuffer(mem, dtype=dtype, count=count).reshape(shape)
 
 
 class WSISlidingWindowDataset(Dataset):
