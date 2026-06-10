@@ -116,6 +116,23 @@ The **mono-core baseline (v0a)** is crucial because it:
 - Memory pool management
 - For memory-constrained GPUs
 
+#### Strategy v9: 🏆 ULTIMATE GPU (Combination of v1-v7, excluding v3)
+**File**: `data_loader_v9_ultimate_gpu.py`
+- **"Push GPU to its limits" philosophy**
+- Combines ALL best practices from v1-v2, v4-v7
+- **Excludes v3 hybrid logic** (GPU-only focus)
+- 7 optimization layers stacked:
+  - Layer 1: Memory management (pinned + pools)
+  - Layer 2: Async streams (3-pipeline)
+  - Layer 3: Batch processing (optimal size)
+  - Layer 4: Mixed precision (optional, validated)
+  - Layer 5: Kernel optimization (stay on GPU)
+  - Layer 6: Memory layout (contiguous, aligned)
+  - Layer 7: Algorithm optimization (early exit, masks)
+- **Expected**: 8-15x speedup over v0b
+- **Target**: Best possible GPU performance for WSI filtering
+- See [V9_ULTIMATE_GPU_PLAN.md](V9_ULTIMATE_GPU_PLAN.md) for detailed design
+
 ---
 
 ## 2.1 Architecture Comparison: v0 → v0a → v0b → v1-v7
@@ -549,6 +566,9 @@ GPU IMPLEMENTATIONS (CuPy Accelerated):
   data_loader_v5_cupy_async.py
   data_loader_v6_cupy_mixed_precision.py
   data_loader_v7_cupy_memory_optimized.py
+  
+ULTIMATE GPU OPTIMIZATION:
+  data_loader_v9_ultimate_gpu.py    (Combination v1-v7, excludes v3)
 ```
 
 #### Testing Infrastructure (3 files)
@@ -711,12 +731,15 @@ pip install matplotlib  # for plotting results
 | **v5 (Async)** | Marginal gains from pipelining | 2.5-5x vs v0b |
 | **v6 (Mixed Precision)** | Faster but may affect filtering accuracy | 5-8x vs v0b |
 | **v7 (Memory Opt)** | Better for memory-constrained systems | 2-4x vs v0b |
+| **v9 (Ultimate GPU)** | 🏆 All optimizations combined | **8-15x vs v0b** |
 
 **Key Insights**: 
 - v0 (ultra-basic) shows algorithm clearly but not production-ready
 - v0a (mono) is reliable baseline: **1.0x reference**
 - v0b (multi) shows CPU parallelization value: **~5x typical speedup**
-- GPU becomes beneficial at **batch size > 50-200 patches** (estimated)
+- v1-v7 explore individual GPU optimization strategies
+- **v9 combines all layers** for maximum GPU performance: **8-15x speedup**
+- v3 (hybrid) provides practical balance; v9 focuses purely on GPU
 
 ---
 
