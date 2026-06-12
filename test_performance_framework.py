@@ -18,6 +18,7 @@ any WSI. GPU work only happens when you actually run a version.
 import importlib
 import statistics
 import time
+import os
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
@@ -35,9 +36,9 @@ IMPLEMENTATIONS: Dict[str, dict] = {
     "v5_async":   dict(module="data_loader_v5_cupy_async",           category="gpu", kwargs={"batch_size": 32}),
     "v6_mixed":   dict(module="data_loader_v6_cupy_mixed_precision", category="gpu", kwargs={"batch_size": 32}),
     "v7_memopt":  dict(module="data_loader_v7_cupy_memory_optimized", category="gpu", kwargs={"chunk_size": 8}),
-    "v8_4060":    dict(module="data_loader_v8_cupy_optimized_4060",   category="gpu", kwargs={"batch_size": 4096}),
+    "v8_4060":    dict(module="data_loader_v8_cupy_optimized_4060",   category="gpu", kwargs={"batch_size": 512}),
     "v9_ultimate": dict(module="data_loader_v9_ultimate_gpu",          category="gpu", kwargs={"batch_size": 32}),
-    "v10_par_io": dict(module="data_loader_v10_parallel_io_gpu",       category="gpu", kwargs={"batch_size": 8192, "num_readers": 20}),
+    "v10_par_io": dict(module="data_loader_v10_parallel_io_gpu",       category="gpu", kwargs={"batch_size": 64, "num_readers": os.cpu_count()}),
     "v11_gpudec": dict(module="data_loader_v11_gpu_decode_5090",       category="gpu", kwargs={"batch_size": 2048}),
 }
 
