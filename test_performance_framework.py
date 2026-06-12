@@ -53,22 +53,19 @@ from typing import Dict, List, Optional, Tuple
 IMPLEMENTATIONS: Dict[str, dict] = {
     "v0a_mono":   dict(module="data_loader_v0a_mono_baseline",       category="cpu", kwargs={}),
     "v0b_multi":  dict(module="data_loader_v0b_multi_baseline",      category="cpu", kwargs={}),
-    "v8_4060":    dict(module="data_loader_v8_cupy_optimized_4060",   category="gpu", kwargs={"batch_size": 4096}),
-    "v10_par_io": dict(module="data_loader_v10_parallel_io_gpu",       category="gpu", kwargs={"batch_size": 4096, "num_readers": os.cpu_count()}),
-    "v11_gpudec": dict(module="data_loader_v11_gpu_decode_5090",       category="gpu", kwargs={"batch_size": 4096}),
-    "v12_dec_mono": dict(module="data_loader_v12_gpu_decode_mono",     category="gpu", kwargs={"batch_size": 8192}),
-    "v13_dec_multi": dict(module="data_loader_v13_gpu_decode_multi",   category="gpu", kwargs={"batch_size": 8192}),
-    "v14_cmp_mono": dict(module="data_loader_v14_gpu_compute_mono",    category="gpu", kwargs={"batch_size": 16384}),
-    "v15_cmp_multi": dict(module="data_loader_v15_gpu_compute_multi",  category="gpu", kwargs={"batch_size": 16384}),
-    "v16_opt_mono": dict(module="data_loader_v16_cuda_opt_mono",       category="gpu", kwargs={"batch_size": 16384}),
-    "v17_opt_multi": dict(module="data_loader_v17_cuda_opt_multi",     category="gpu", kwargs={"batch_size": 16384}),
-    "v18_ult_mono": dict(module="data_loader_v18_cuda_ultimate_mono",  category="gpu", kwargs={"batch_size": 8192}),
-    "v19_ult_multi": dict(module="data_loader_v19_cuda_ultimate_multi", category="gpu", kwargs={"batch_size": 8192}),
+    "v12_dec_mono": dict(module="data_loader_v12_gpu_decode_mono",     category="gpu", kwargs={"batch_size": 12288}),
+    "v13_dec_multi": dict(module="data_loader_v13_gpu_decode_multi",   category="gpu", kwargs={"batch_size": 12288}),
+    "v14_cmp_mono": dict(module="data_loader_v14_gpu_compute_mono",    category="gpu", kwargs={"batch_size": 6144}),
+    "v15_cmp_multi": dict(module="data_loader_v15_gpu_compute_multi",  category="gpu", kwargs={"batch_size": 6144}),
+    "v16_opt_mono": dict(module="data_loader_v16_cuda_opt_mono",       category="gpu", kwargs={"batch_size": 131072}),
+    "v17_opt_multi": dict(module="data_loader_v17_cuda_opt_multi",     category="gpu", kwargs={"batch_size": 131072}),
+    "v18_ult_mono": dict(module="data_loader_v18_cuda_ultimate_mono",  category="gpu", kwargs={"batch_size": 4096}),
+    "v19_ult_multi": dict(module="data_loader_v19_cuda_ultimate_multi", category="gpu", kwargs={"batch_size": 4096}),
 }
 
 
 CLASS_NAME = "WSISlidingWindowDataset"
-DEFAULT_WSI = "data/S114-80954A-Her2(3+).tiff"   # smallest slide -> fast iteration
+DEFAULT_WSI = "data/S114-82742C-Her2(4B5) 20x.tiff"   # smallest slide -> fast iteration
 
 
 def list_versions(category: Optional[str] = None) -> List[str]:
