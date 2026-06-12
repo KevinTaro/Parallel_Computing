@@ -34,8 +34,10 @@ from test_performance_framework import CuPyTester, ValidationChecker  # noqa: E4
 MATRIX = [
     ("v0a_mono",     1),   # mono CPU only        (reference)
     ("v0b_multi",    2),   # multi CPU only
-    ("v14_cmp_mono", 1),   # mono + general GPU compute
-    ("v15_cmp_multi",2),   # multi + general GPU compute
+    ("v14_cmp_mono", 1),   # mono + naive custom CUDA decode
+    ("v15_cmp_multi",2),   # multi + naive custom CUDA decode
+    ("v16_opt_mono", 2),   # mono + optimized custom CUDA decode (auto-tuned)
+    ("v17_opt_multi",2),   # multi + optimized custom CUDA decode (auto-tuned)
     ("v12_dec_mono", 2),   # mono + nvJPEG
     ("v13_dec_multi",2),   # multi + nvJPEG
 ]
