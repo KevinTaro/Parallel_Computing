@@ -4,9 +4,8 @@ data_loader_v16_cuda_opt_mono.py
 v16: OPTIMIZED custom CUDA decode on a MONO-CORE feed  (mono x tuned-CUDA)
 =========================================================================
 Same ablation cell as v14 (mono feed, hand-written CUDA decode, no nvJPEG) but
-using the *optimized, auto-tuning* decoder ``gpu_jpeg_decoder_optimized`` instead
-of the naive one. Bit-identical output to v14; the difference is throughput and
-portability.
+using the *optimized* decoder ``gpu_jpeg_decoder_optimized`` instead of the naive
+one. Bit-identical output to v14; the difference is throughput.
 
 Optimizations inherited from the decoder (see that module for detail):
   - register bit-buffer + 8-bit Huffman LUT (vs per-bit global reads),
@@ -14,8 +13,9 @@ Optimizations inherited from the decoder (see that module for detail):
   - DC-only blocks skip the IDCT,
   - **fused YCbCr->luma->count** -> no (N,512,512,3) RGB buffer is materialised,
     which both cuts memory traffic and lets the batch fit small-VRAM cards,
-  - **GPU auto-tuning**: the batch size is derived from free VRAM, so the same
-    code adapts across e.g. RTX 5090 32 GB / RTX 4060 8 GB / GTX 1060 3 GB.
+  - **fixed, manually-set batch size** (``batch_size`` kwarg, like the other
+    loaders): tune it per card -- smaller fits small-VRAM cards (e.g. GTX 1060
+    3 GB), larger amortises launch overhead on big cards (e.g. RTX 5090 32 GB).
 
 Base: data_loader_v0a_mono_baseline.py (single CPU read thread). Compare v16 vs
 v14 for the optimization win; v16 vs v12 for tuned-CUDA vs nvJPEG.
@@ -35,7 +35,7 @@ from gpu_jpeg_decoder_optimized import GpuJpegDecoderOptimized
 
 
 class WSISlidingWindowDataset(Dataset):
-    """Mono-core feed + optimized auto-tuning custom CUDA decode (v0a base)."""
+    """Mono-core feed + optimized custom CUDA decode (v0a base)."""
 
     def __init__(self,
                  wsi_path: str,
@@ -45,7 +45,7 @@ class WSISlidingWindowDataset(Dataset):
                  white_pixel_threshold: int = 230,
                  black_pixel_threshold: int = 25,
                  rejection_ratio: float = 0.9,
-                 batch_size: Optional[int] = None,   # None -> auto from VRAM
+                 batch_size: int = 2048,
                  verbose: bool = False):
         self.wsi_path = wsi_path
         self.patch_size = patch_size
@@ -54,6 +54,7 @@ class WSISlidingWindowDataset(Dataset):
         self.white_pixel_threshold = white_pixel_threshold
         self.black_pixel_threshold = black_pixel_threshold
         self.rejection_ratio = rejection_ratio
+        self.batch_size = batch_size
         self.verbose = verbose
         self.read_time = 0.0
         self.decode_time = 0.0      # GPU decode + fused count
@@ -70,7 +71,6 @@ class WSISlidingWindowDataset(Dataset):
         if self._tiff["compression"] != 7:
             raise ValueError("v16 custom CUDA decoder needs JPEG tiles (compression 7).")
         self._decoder = self._build_decoder()
-        self.batch_size = batch_size or self._decoder.recommended_batch
 
         start = time.time()
         self.coordinates = self._create_grid()
@@ -78,7 +78,7 @@ class WSISlidingWindowDataset(Dataset):
         if self.verbose:
             d = self._decoder.device
             print(f"[*] v16 on {d['name']} (cc{d['cc']}, {d['free']/1e9:.1f}GB free) "
-                  f"auto batch={self.batch_size}")
+                  f"batch={self.batch_size}")
             print(f"[*] v16 grid done in {self.grid_creation_time:.2f}s "
                   f"(read {self.read_time:.3f} + cuda-decode+count {self.decode_time:.3f}); "
                   f"kept {len(self.coordinates)}")
