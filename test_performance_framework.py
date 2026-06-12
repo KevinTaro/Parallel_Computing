@@ -40,6 +40,10 @@ IMPLEMENTATIONS: Dict[str, dict] = {
     "v9_ultimate": dict(module="data_loader_v9_ultimate_gpu",          category="gpu", kwargs={"batch_size": 32}),
     "v10_par_io": dict(module="data_loader_v10_parallel_io_gpu",       category="gpu", kwargs={"batch_size": 64, "num_readers": os.cpu_count()}),
     "v11_gpudec": dict(module="data_loader_v11_gpu_decode_5090",       category="gpu", kwargs={"batch_size": 2048}),
+    "v12_dec_mono": dict(module="data_loader_v12_gpu_decode_mono",     category="gpu", kwargs={"batch_size": 2048}),
+    "v13_dec_multi": dict(module="data_loader_v13_gpu_decode_multi",   category="gpu", kwargs={"batch_size": 2048}),
+    "v14_cmp_mono": dict(module="data_loader_v14_gpu_compute_mono",    category="gpu", kwargs={"batch_size": 256}),
+    "v15_cmp_multi": dict(module="data_loader_v15_gpu_compute_multi",  category="gpu", kwargs={"batch_size": 512}),
 }
 
 CLASS_NAME = "WSISlidingWindowDataset"
