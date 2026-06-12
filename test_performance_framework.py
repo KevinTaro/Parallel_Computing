@@ -42,8 +42,8 @@ IMPLEMENTATIONS: Dict[str, dict] = {
     "v11_gpudec": dict(module="data_loader_v11_gpu_decode_5090",       category="gpu", kwargs={"batch_size": 2048}),
     "v12_dec_mono": dict(module="data_loader_v12_gpu_decode_mono",     category="gpu", kwargs={"batch_size": 2048}),
     "v13_dec_multi": dict(module="data_loader_v13_gpu_decode_multi",   category="gpu", kwargs={"batch_size": 2048}),
-    "v14_cmp_mono": dict(module="data_loader_v14_gpu_compute_mono",    category="gpu", kwargs={"batch_size": 256}),
-    "v15_cmp_multi": dict(module="data_loader_v15_gpu_compute_multi",  category="gpu", kwargs={"batch_size": 512}),
+    "v14_cmp_mono": dict(module="data_loader_v14_gpu_compute_mono",    category="gpu", kwargs={"batch_size": 1024}),
+    "v15_cmp_multi": dict(module="data_loader_v15_gpu_compute_multi",  category="gpu", kwargs={"batch_size": 1024}),
 }
 
 CLASS_NAME = "WSISlidingWindowDataset"
