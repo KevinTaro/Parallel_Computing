@@ -16,6 +16,7 @@ import argparse
 import glob
 import json
 import os
+import re
 
 RESULTS_DIR = "results"
 BASELINE = "v0a_mono"
@@ -71,6 +72,11 @@ def plot(rows, out_path):
     except Exception:
         print("[plot] matplotlib unavailable; skipping.")
         return None
+    def version_key(v):
+        m = re.match(r"v(\d+)(\w*)", v)
+        return (int(m.group(1)), m.group(2)) if m else (float("inf"), v)
+
+    rows = sorted(rows, key=lambda r: version_key(r["version"]))
     versions = [r["version"] for r in rows]
     speed = [r["speedup_v0a"] or 0 for r in rows]
     colors = ["#888" if v.startswith("v0") else "#1f77b4" for v in versions]
