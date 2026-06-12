@@ -3,8 +3,9 @@ gpu_jpeg_decoder_optimized.py
 
 OPTIMIZED hand-written CUDA baseline-JPEG decoder (no nvJPEG, no codec library).
 Same algorithm and (bit-for-bit) same output as ``gpu_jpeg_decoder.py``, but
-tuned to extract the card's throughput, and it AUTO-ADAPTS to the GPU it finds
-(tested target envelope: RTX 5090 32 GB, RTX 4060 8 GB, GTX 1060 3 GB).
+tuned to extract the card's throughput. The batch size (tiles per GPU launch) is
+set explicitly by the caller -- see the ``batch_size`` kwarg on v16/v17 -- so it
+can be tuned per card (e.g. RTX 5090 32 GB, RTX 4060 8 GB, GTX 1060 3 GB).
 
 What changed vs the naive decoder
 ---------------------------------
@@ -20,8 +21,10 @@ What changed vs the naive decoder
    YCbCr->RGB, computes the PIL luma, and block-reduces white/black pixel counts
    per tile. No RGB buffer is ever materialised -> far less VRAM (this is what
    lets a 3 GB card run large batches) and less memory traffic.
-5. **Device auto-tuning.** Batch size is derived from *free* VRAM so the same
-   code saturates a 32 GB 5090 and still fits a 3 GB 1060.
+5. **Fixed, manually-set batch size.** The caller picks the batch size (tiles per
+   GPU launch) explicitly, like the other loaders -- no auto-tuning. Smaller
+   values fit small-VRAM cards (e.g. a 3 GB 1060); larger values amortise launch
+   overhead on big cards.
 
 Output remains NOT bit-exact with libjpeg (float IDCT, nearest chroma upsample),
 but it is identical to the naive decoder, so callers' kept sets are unchanged.
@@ -289,14 +292,10 @@ def _detect_device() -> dict:
 
 
 class GpuJpegDecoderOptimized:
-    """Optimized custom-CUDA JPEG decoder with GPU auto-tuning."""
-
-    # decoded planes (Y + Cb + Cr) per tile; the fused counter needs no RGB.
-    _PLANE_BYTES = 512 * 512 + 2 * 256 * 256        # ~384 KiB
-    _SCAN_EST = 96 * 1024                           # generous per-tile scan estimate
+    """Optimized custom-CUDA JPEG decoder. Batch size is chosen by the caller."""
 
     def __init__(self, jpegtables: bytes, sample_tile: bytes,
-                 vram_fraction: float = 0.40, decode_threads: int = 32):
+                 decode_threads: int = 32):
         tables = parse_shared_tables(jpegtables)
         frame = parse_tile_frame(sample_tile)
         comps = frame["comps"]
@@ -342,7 +341,6 @@ class GpuJpegDecoderOptimized:
 
         self.decode_threads = decode_threads
         self.device = _detect_device()
-        self.recommended_batch = self._auto_batch(vram_fraction)
 
     # -- constant-memory upload -------------------------------------------
     def _set_const(self, name: str, arr: np.ndarray) -> None:
@@ -373,13 +371,6 @@ class GpuJpegDecoderOptimized:
                     out[(tc_th >> 4) * 2 + (tc_th & 0x0F)] = (counts, vals)
             i += 2 + seg_len
         return out
-
-    def _auto_batch(self, frac: float) -> int:
-        """Tiles per GPU batch sized to *free* VRAM, clamped to a sane range."""
-        per_tile = self._PLANE_BYTES + self._SCAN_EST
-        budget = int(self.device["free"] * frac)
-        batch = budget // per_tile
-        return int(max(128, min(batch, 8192)))
 
     # -- decoding ----------------------------------------------------------
     def _upload(self, tiles: List[bytes]):
