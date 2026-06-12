@@ -50,6 +50,7 @@ from typing import Dict, List, Optional, Tuple
     "v19_ult_multi": dict(module="data_loader_v19_cuda_ultimate_multi", category="gpu", kwargs={"batch_size": 2048}),
 }"""
 
+### for 5090
 IMPLEMENTATIONS: Dict[str, dict] = {
     "v0a_mono":   dict(module="data_loader_v0a_mono_baseline",       category="cpu", kwargs={}),
     "v0b_multi":  dict(module="data_loader_v0b_multi_baseline",      category="cpu", kwargs={}),
