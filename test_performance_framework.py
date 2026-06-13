@@ -48,6 +48,20 @@ IMPLEMENTATIONS: Dict[str, dict] = {
     "v17_opt_multi": dict(module="data_loader_v17_cuda_opt_multi",     category="gpu", kwargs={"batch_size": 2048}),
     "v18_ult_mono": dict(module="data_loader_v18_cuda_ultimate_mono",  category="gpu", kwargs={"batch_size": 2048}),
     "v19_ult_multi": dict(module="data_loader_v19_cuda_ultimate_multi", category="gpu", kwargs={"batch_size": 2048}),
+    "v20_ult_pread": dict(module="data_loader_v20_cuda_ultimate_pread", category="gpu", kwargs={"batch_size": 2048, "num_readers": os.cpu_count()}),
+    "v21_ult_pipe": dict(module="data_loader_v21_cuda_ultimate_pipeline", category="gpu", kwargs={"batch_size": 2048, "num_readers": os.cpu_count()}),
+    "v22_par_destuff": dict(module="data_loader_v22_cuda_parallel_destuff", category="gpu", kwargs={"batch_size": 2048, "num_readers": os.cpu_count()}),
+    # v23-v32: v1-v10 concepts re-applied with the best GPU decode kernel
+    "v23_dec_v1":     dict(module="data_loader_v23_dec_v1_naive",      category="gpu", kwargs={}),
+    "v24_dec_v2":     dict(module="data_loader_v24_dec_v2_batch",      category="gpu", kwargs={"batch_size": 0}),
+    "v25_dec_v3":     dict(module="data_loader_v25_dec_v3_hybrid",     category="gpu", kwargs={"batch_size": 2048, "gpu_threshold": 128}),
+    "v26_dec_v4":     dict(module="data_loader_v26_dec_v4_pinned",     category="gpu", kwargs={"batch_size": 2048}),
+    "v27_dec_v5":     dict(module="data_loader_v27_dec_v5_async",      category="gpu", kwargs={"batch_size": 2048}),
+    "v28_dec_v6":     dict(module="data_loader_v28_dec_v6_fp16",       category="gpu", kwargs={"batch_size": 2048}),
+    "v29_dec_v7":     dict(module="data_loader_v29_dec_v7_membudget",  category="gpu", kwargs={"vram_budget_gb": 1.0}),
+    "v30_dec_v8":     dict(module="data_loader_v30_dec_v8_threaded",   category="gpu", kwargs={"batch_size": 2048, "num_readers": os.cpu_count()}),
+    "v31_dec_v9":     dict(module="data_loader_v31_dec_v9_combined",   category="gpu", kwargs={"batch_size": 2048, "num_readers": os.cpu_count()}),
+    "v32_dec_v10":    dict(module="data_loader_v32_dec_v10_pipeline",  category="gpu", kwargs={"batch_size": 2048, "num_readers": os.cpu_count()}),
 }
 
 """
@@ -63,6 +77,19 @@ IMPLEMENTATIONS: Dict[str, dict] = {
     "v17_opt_multi": dict(module="data_loader_v17_cuda_opt_multi",     category="gpu", kwargs={"batch_size": 131072}),
     "v18_ult_mono": dict(module="data_loader_v18_cuda_ultimate_mono",  category="gpu", kwargs={"batch_size": 4096}),
     "v19_ult_multi": dict(module="data_loader_v19_cuda_ultimate_multi", category="gpu", kwargs={"batch_size": 4096}),
+    "v20_ult_pread": dict(module="data_loader_v20_cuda_ultimate_pread", category="gpu", kwargs={"batch_size": 4096, "num_readers": os.cpu_count()}),
+    "v21_ult_pipe": dict(module="data_loader_v21_cuda_ultimate_pipeline", category="gpu", kwargs={"batch_size": 4096, "num_readers": os.cpu_count()}),
+    "v22_par_destuff": dict(module="data_loader_v22_cuda_parallel_destuff", category="gpu", kwargs={"batch_size": 4096, "num_readers": os.cpu_count()}),
+    "v23_dec_v1":     dict(module="data_loader_v23_dec_v1_naive",      category="gpu", kwargs={}),
+    "v24_dec_v2":     dict(module="data_loader_v24_dec_v2_batch",      category="gpu", kwargs={"batch_size": 0}),
+    "v25_dec_v3":     dict(module="data_loader_v25_dec_v3_hybrid",     category="gpu", kwargs={"batch_size": 4096, "gpu_threshold": 128}),
+    "v26_dec_v4":     dict(module="data_loader_v26_dec_v4_pinned",     category="gpu", kwargs={"batch_size": 4096}),
+    "v27_dec_v5":     dict(module="data_loader_v27_dec_v5_async",      category="gpu", kwargs={"batch_size": 4096}),
+    "v28_dec_v6":     dict(module="data_loader_v28_dec_v6_fp16",       category="gpu", kwargs={"batch_size": 4096}),
+    "v29_dec_v7":     dict(module="data_loader_v29_dec_v7_membudget",  category="gpu", kwargs={"vram_budget_gb": 8.0}),
+    "v30_dec_v8":     dict(module="data_loader_v30_dec_v8_threaded",   category="gpu", kwargs={"batch_size": 4096, "num_readers": os.cpu_count()}),
+    "v31_dec_v9":     dict(module="data_loader_v31_dec_v9_combined",   category="gpu", kwargs={"batch_size": 4096, "num_readers": os.cpu_count()}),
+    "v32_dec_v10":    dict(module="data_loader_v32_dec_v10_pipeline",  category="gpu", kwargs={"batch_size": 4096, "num_readers": os.cpu_count()}),
 }"""
 
 
