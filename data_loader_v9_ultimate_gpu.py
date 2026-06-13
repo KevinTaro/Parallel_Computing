@@ -73,7 +73,7 @@ class WSISlidingWindowDataset(Dataset):
                  white_pixel_threshold: int = 230,
                  black_pixel_threshold: int = 25,
                  rejection_ratio: float = 0.9,
-                 batch_size: int = 64,
+                 batch_size: int = 512,
                  num_streams: int = 2,
                  # --- layer toggles (for the ablation study) ----------------
                  enable_pinned_memory: bool = True,    # Layer 1

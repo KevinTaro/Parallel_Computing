@@ -67,7 +67,7 @@ class WSISlidingWindowDataset(Dataset):
                  white_pixel_threshold: int = 230,
                  black_pixel_threshold: int = 25,
                  rejection_ratio: float = 0.9,
-                 batch_size: int = 64,
+                 batch_size: int = 512,
                  num_readers: int = 8,
                  verbose: bool = False):
         self.wsi_path = wsi_path
