@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="zh-TW"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSI Patch-Filtering: Extended Study (v1-v32)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+    <link href="WSI%20Patch-Filtering_%20Extended%20Study%20(v1-v32)_files/css2.css" rel="stylesheet">
+    <link rel="stylesheet" href="WSI%20Patch-Filtering_%20Extended%20Study%20(v1-v32)_files/all.min.css">
+    <style>
+        /* ==========================================================================
+           1. CORE SETUP & THEME DEFINITION
+           ========================================================================== */
+        * { box-sizing: border-box; }
+        p { margin: 0; margin-bottom: 15px; }
+        body {
+            background-color: #05080f;
+            display: grid; gap: 20px; grid-template-columns: 1fr;
+            margin: 0; min-height: 100vh; padding: 20px 0;
+            place-items: center; font-family: 'Lato', sans-serif;
+        }
+        .slide-container {
+            align-items: center; background-color: #0B0F19;
+            border-radius: 12px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            display: flex; flex-direction: column; height: 720px;
+            justify-content: center; overflow: hidden; padding: 50px 60px;
+            position: relative; width: 1280px;
+        }
+        .slide-container::before {
+            content: ''; position: absolute; top: -200px; left: -200px;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(100, 255, 218, 0.05) 0%, transparent 70%); z-index: 0;
+        }
+        .slide-container::after {
+            content: ''; position: absolute; bottom: -300px; right: -200px;
+            width: 800px; height: 800px;
+            background: radial-gradient(circle, rgba(129, 140, 248, 0.05) 0%, transparent 70%); z-index: 0;
+        }
+        .slide-container > * { position: relative; z-index: 1; width: 100%; }
+
+        /* ==========================================================================
+           2. TYPOGRAPHY
+           ========================================================================== */
+        h1, h2, h3 { color: #FFFFFF; font-family: 'Poppins', sans-serif; font-weight: 700; margin: 0; letter-spacing: 0.5px; }
+        h1 { font-size: 60px; line-height: 1.2; text-align: center; }
+        .slide-title {
+            font-size: 38px; font-weight: 600; margin-bottom: 30px; text-align: left;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1); padding-bottom: 15px; color: #64FFDA;
+        }
+        .slide-title span { color: #FFFFFF; font-size: 24px; margin-left: 15px; font-weight: 400; color: #94A3B8;}
+        h3 { font-size: 26px; margin-bottom: 12px; color: #818CF8; }
+        p, li, .subtitle, th, td { color: #E2E8F0; font-size: 20px; line-height: 1.6; }
+        .subtitle { font-size: 24px; font-weight: 400; color: #94A3B8; margin-top: 20px; text-align: center; }
+        .highlight { color: #64FFDA; font-weight: 700; }
+        .highlight-alt { color: #818CF8; font-weight: 700; }
+        .mono { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: #94A3B8; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; }
+        .content-area { display: flex; flex-direction: column; flex-grow: 1; justify-content: flex-start; }
+
+        /* ==========================================================================
+           3. LAYOUT DEFINITIONS
+           ========================================================================== */
+        .title-layout { text-align: center; max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; height: 100%;}
+        .section-title-layout { align-items: center; display: flex; flex-direction: column; height: 100%; justify-content: center; text-align: center; }
+        .section-title-layout h2 { font-size: 70px; margin-bottom: 20px; color: #64FFDA; }
+        .section-title-layout p { font-size: 26px; color: #94A3B8; max-width: 800px; }
+        .section-title-layout hr { background-color: #818CF8; border: none; height: 6px; margin: 40px auto; width: 120px; border-radius: 3px; }
+
+        .two-column { align-items: flex-start; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .two-column.tiled > div { background-color: #1A2235; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); padding: 30px; }
+        .image-wrapper { border-radius: 12px; height: 350px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+        .image-wrapper img { height: 100%; width: 100%; object-fit: cover; }
+        
+        .tiled-content { align-items: stretch; display: flex; gap: 25px; justify-content: center; }
+        .tile { background-color: #1A2235; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); flex: 1; padding: 30px; }
+        .tile .icon { color: #818CF8; font-size: 40px; margin-bottom: 20px; }
+        
+        .bullet-list ul { list-style: none; padding: 0; }
+        .bullet-list li { margin-bottom: 20px; padding-left: 40px; position: relative; }
+        .bullet-list i { color: #64FFDA; font-size: 22px; left: 0; margin-top: 4px; position: absolute; }
+        .bullet-list li strong { color: #FFFFFF; font-size: 22px; display: block; margin-bottom: 5px; }
+
+        .file-card { background: #1A2235; border-left: 5px solid #64FFDA; padding: 25px; border-radius: 0 12px 12px 0; margin-bottom: 20px;}
+        .file-card.alt { border-left-color: #818CF8; }
+        .file-card h3 { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;}
+        .file-card .badge { background: rgba(100,255,218,0.1); color: #64FFDA; font-size: 14px; padding: 4px 10px; border-radius: 20px; font-family: 'JetBrains Mono';}
+
+        #formula-container { display: math; font-size: 30px; color: #64FFDA; margin: 20px 0; background: #0B0F19; padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        
+        .flow-chart { background: #1A2235; padding: 30px; border-radius: 12px; font-family: 'JetBrains Mono'; font-size: 16px; color: #E2E8F0; line-height: 1.8; overflow-x: auto;}
+        .flow-chart span.a { color: #64FFDA; }
+        .flow-chart span.b { color: #818CF8; }
+        .flow-chart span.c { color: #FBBF24; }
+        
+        /* Chart Styling */
+        .chart-container { display: flex; flex-direction: column; gap: 20px; width: 100%; }
+        .bar { align-items: center; display: flex; gap: 20px; }
+        .bar .label { color: #E2E8F0; flex: 0 0 280px; font-weight: 600; text-align: right; }
+        .bar .bar-inner { background-color: #1A2235; border-radius: 8px; flex-grow: 1; height: 45px; border: 1px solid rgba(255,255,255,0.05); }
+        .bar .bar-fill {
+            align-items: center; border-radius: 7px; color: #0B0F19; display: flex;
+            font-size: 18px; font-weight: 700; height: 100%; justify-content: flex-end; padding-right: 15px;
+            background: linear-gradient(90deg, #38bdf8, #818CF8);
+        }
+        .bar .bar-fill.gold { background: linear-gradient(90deg, #FBBF24, #FDE68A); }
+        
+        .highlight-numbers-layout { display: grid; grid-template-columns: 40% 60%; gap: 40px; align-items: center; }
+        .highlight-numbers-layout .number-box { text-align: center; }
+        .highlight-numbers-layout .number { color: #64FFDA; font-size: 100px; font-weight: 700; font-family: 'Poppins'; line-height: 1; }
+        .highlight-numbers-layout .number-label { font-size: 24px; font-weight: 600; color: #FFFFFF; margin-top: 15px; }
+
+    </style>
+</head>
+<body>
+
+<!-- SLIDE 1: TITLE -->
+<div class="slide-container">
+    <div class="title-layout">
+        <h1>WSI Patch-Filtering:<br><span class="highlight">CPU to GPU Study</span></h1>
+        <p class="subtitle">從單執行緒基準，到最高 62.00x 加速的系統工程分析<br>收錄 v1 至 v32 版本演進全紀錄</p>
+    </div>
+</div>
+
+<!-- SLIDE 2: SECTION 1 -->
+<div class="slide-container">
+    <div class="section-title-layout">
+        <hr><h2>任務與核心基準</h2>
+        <p>The Core Task &amp; Evaluation Framework</p>
+    </div>
+</div>
+
+<!-- SLIDE 3 -->
+<div class="slide-container">
+    <h2 class="slide-title">專案概述</h2>
+    <div class="content-area">
+        <div class="two-column">
+            <div>
+                <p>這是一個探討**平行運算與硬體加速**的研究專案。任務目標極其固定：</p>
+                <p><strong>使用滑動視窗 (Sliding Window) 掃描醫療全玻片影像 (Gigapixel WSI)，並僅保留含有組織的切片 (Patches)。</strong></p>
+                <div class="bullet-list" style="margin-top: 20px;">
+                    <ul>
+                        <li><i class="fa-solid fa-microscope"></i><strong>資料集：</strong> Philips Her2 WSI `.tiff`。</li>
+                        <li><i class="fa-solid fa-code-compare"></i><strong>不變法則：</strong> 運算邏輯在所有 30+ 版本中皆完全一致。</li>
+                        <li><i class="fa-solid fa-shield-halved"></i><strong>正確性閘門：</strong> 每個版本必須完美重現 `v0a` 的過濾結果。</li>
+                    </ul>
+                </div>
+            </div>
+            <div>
+                <div class="image-wrapper"><img src="WSI%20Patch-Filtering_%20Extended%20Study%20(v1-v32)_files/photo-1579154204601-01588f351e67.avif" alt="Microscope"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 4 -->
+<div class="slide-container">
+    <h2 class="slide-title">核心演算法 (Luma &amp; Threshold)</h2>
+    <div class="content-area">
+        <div class="two-column tiled">
+            <div>
+                <h3>1. 精確整數亮度轉換</h3>
+                <p>為了確保 CPU 與 GPU 的位元級 (bit-for-bit) 一致性，採用 PIL 的精確整數 ITU-R 601 公式，避免浮點數誤差：</p>
+                <div id="formula-container">
+                    <math><mi>L</mi><mo>=</mo><mo>(</mo><mi>R</mi><mo>×</mo><mn>19595</mn><mo>+</mo><mi>G</mi><mo>×</mo><mn>38470</mn><mo>+</mo><mi>B</mi><mo>×</mo><mn>7471</mn><mo>+</mo><mn>32768</mn><mo>)</mo><mo>≫</mo><mn>16</mn></math>
+                </div>
+            </div>
+            <div>
+                <h3>2. 過濾條件</h3>
+                <p>計算每張 Patch 中極端像素的數量：</p>
+                <ul style="list-style: none; padding-left: 0;">
+                    <li><span class="highlight-alt">&gt;</span> <strong>白像素：</strong> 灰階值 &gt; 230</li>
+                    <li><span class="highlight-alt">&gt;</span> <strong>黑像素：</strong> 灰階值 &lt; 25</li>
+                </ul>
+                <p style="margin-top: 15px;">若任一極端像素比例 <strong>≥ 0.9 (90%)</strong>，即視為背景或空洞並丟棄。</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 5 -->
+<div class="slide-container">
+    <h2 class="slide-title">三條演進主線 (The Three Storylines)</h2>
+    <div class="content-area">
+        <p>這 30 餘個版本並非隨機嘗試，而是由三條清晰的技術脈絡所組成：</p>
+        <div class="tiled-content" style="margin-top: 20px;">
+            <div class="tile">
+                <div class="icon"><i class="fa-solid fa-microchip"></i></div>
+                <h3>線 A: CuPy 計算線<br><span style="font-size:16px; color:#94A3B8;">(v1 - v10)</span></h3>
+                <p>嘗試把「過濾計算」搬上 GPU。過程中逐步發現，真正的效能瓶頸其實是 <strong>CPU 的 JPEG 解碼</strong>。</p>
+            </div>
+            <div class="tile">
+                <div class="icon"><i class="fa-solid fa-bolt"></i></div>
+                <h3>線 B: GPU 解碼線<br><span style="font-size:16px; color:#94A3B8;">(v11 - v22)</span></h3>
+                <p>拔掉 CPU 解碼的地板。將 <strong>JPEG 解碼本身</strong>也搬上 GPU (nvJPEG / CUDA)，並優化資料餵養管線。</p>
+            </div>
+            <div class="tile">
+                <div class="icon"><i class="fa-solid fa-clone"></i></div>
+                <h3>線 C: 概念重演線<br><span style="font-size:16px; color:#94A3B8;">(v23 - v32)</span></h3>
+                <p>在 GPU 解碼的全新世界中，<strong>重新實作一次</strong> v1-v10 的概念，驗證底層優化原理的一致性。</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 6: SECTION 2 -->
+<div class="slide-container">
+    <div class="section-title-layout">
+        <hr><h2>Library Loaders &amp; Baselines</h2>
+        <p>原始載入器與 CPU 基準效能 (v0 Series)</p>
+    </div>
+</div>
+
+<!-- SLIDE 7 -->
+<div class="slide-container">
+    <h2 class="slide-title">原始資料載入器</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>data_loader.py <span class="badge">Production</span></h3>
+            <p>原始的生產環境載入器，使用 <span class="mono">multiprocessing.Pool</span>，每個 worker 配置一個 OpenSlide 實例。</p>
+        </div>
+        <div class="file-card">
+            <h3>data_loader_mono.py <span class="badge">Single-thread</span></h3>
+            <p>單執行緒版本的載入器類別，作為效能量測的絕對底線。</p>
+        </div>
+        <div class="file-card">
+            <h3>data_loader_640.py <span class="badge">Subclass</span></h3>
+            <p>薄包裝子類別，僅將 <span class="mono">patch_size</span> 與 <span class="mono">stride</span> 預設為 640 (專供 DenseNet121 實驗使用)，演算法無變更。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 8 -->
+<div class="slide-container">
+    <h2 class="slide-title">CPU 基準線 (Baselines)</h2>
+    <div class="content-area">
+        <div class="file-card alt">
+            <h3>v0_ultra_basic <span class="badge">data_loader_v0_ultra_basic.py</span></h3>
+            <p><strong>教學鷹架：</strong>最簡化的載入器，無錯誤處理與優化，純粹展示資料流骨架。</p>
+        </div>
+        <div class="file-card alt">
+            <h3>v0a_mono_baseline <span class="badge">data_loader_v0a_mono_baseline.py</span></h3>
+            <p><strong>絕對參考基準 (1.0x)：</strong>單核心循序讀取與過濾。<br>實際測量吞吐量：<span class="highlight">76.36 patches/s</span>，耗時 64.8 秒。</p>
+        </div>
+        <div class="file-card alt">
+            <h3>v0b_multi_baseline <span class="badge">data_loader_v0b_multi_baseline.py</span></h3>
+            <p><strong>純 CPU 平行化天花板：</strong>利用 multiprocessing.Pool。<br>實際測量吞吐量：<span class="highlight">824.32 patches/s</span> (加速 10.79x)，耗時 6.00 秒。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 9: SECTION 3 -->
+<div class="slide-container">
+    <div class="section-title-layout">
+        <hr><h2>線 A: CuPy 計算線 (v1 - v10)</h2>
+        <p>把過濾計算移至 GPU，與尋找真瓶頸的旅程</p>
+    </div>
+</div>
+
+<!-- SLIDE 10 -->
+<div class="slide-container">
+    <h2 class="slide-title">v1: Naive (逐一切片 GPU化)</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>data_loader_v1_cupy_full.py <span class="badge">v1_full</span></h3>
+            <p><strong>設計：</strong>最天真的策略。每張 Patch 各自進行一次 Host-to-Device 傳輸，並呼叫 GPU Kernel。</p>
+            <p><strong>結果：</strong>這是一個**反例**。傳輸與 Kernel Launch 的開銷被放大數千倍，導致執行速度極差，甚至不如 CPU。</p>
+            <p><strong>程式碼特徵：</strong>在 <span class="mono">_keep_patch</span> 中直接使用 <span class="mono">cp.asarray</span> 傳輸單張影像，並用 <span class="mono">float(cp.sum)</span> 強制同步拉回結果。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 11 -->
+<div class="slide-container">
+    <h2 class="slide-title">v2: Batch (整批處理)</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>data_loader_v2_cupy_batch.py <span class="badge">v2_batch</span></h3>
+            <p><strong>設計：</strong>將 N 張 Patches 打包成 <code>(N, H, W, 4)</code> 陣列，進行**單次**傳輸，並沿空間軸 (axis=1,2) 向量化計算。</p>
+            <p><strong>結果：</strong>大幅攤平了 Launch 開銷，GPU 開始發揮正向效益。證明了：<strong>關鍵不在用不用 GPU，而在有沒有批次餵料。</strong></p>
+            <p><strong>限制：</strong>高 VRAM 消耗。uint32 灰階中間值會吃掉大量記憶體。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 12 -->
+<div class="slide-container">
+    <h2 class="slide-title">v3: Hybrid (聰明路由)</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>data_loader_v3_cupy_hybrid.py <span class="badge">v3_hybrid</span></h3>
+            <p><strong>設計：</strong>動態決策。當剩餘/尾數的 Patch 數量小於 <span class="mono">gpu_threshold</span> (預設 16) 時，退回使用 CPU NumPy 計算。</p>
+            <p><strong>結果：</strong>避免在零碎區塊浪費 GPU 初始化資源，是最貼近真實部署彈性的架構。</p>
+            <p><strong>正確性保證：</strong>CPU 與 GPU 路徑共用完全相同的 ITU-R 601 整數權重，結果與走哪條路徑無關。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 13 -->
+<div class="slide-container">
+    <h2 class="slide-title">v4: Pinned Memory (頁鎖定記憶體)</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>data_loader_v4_cupy_pinned_memory.py <span class="badge">v4_pinned</span></h3>
+            <p><strong>設計：</strong>捨棄可分頁 (Pageable) 記憶體，改用 **Pinned Staging Buffer** 與預先配置的 Device Buffer。</p>
+            <ul style="margin-top: 15px; color:#E2E8F0; font-size:18px; padding-left:20px;">
+                <li>透過 <span class="mono">PinnedMemoryPool</span> 分配。</li>
+                <li>允許 GPU DMA (Direct Memory Access) 直讀主機記憶體。</li>
+                <li>免除了每次批次處理時配置記憶體 (<span class="mono">malloc</span>) 的抖動開銷。</li>
+            </ul>
+            <p><strong>意義：</strong>為後續的「非同步傳輸」打下基礎。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 14 -->
+<div class="slide-container">
+    <h2 class="slide-title">v5: Async Streams (非同步管線)</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>data_loader_v5_cupy_async.py <span class="badge">v5_async</span></h3>
+            <p><strong>設計：</strong>實作真正的 <strong>雙緩衝 (Double-buffered) CUDA Streams</strong>。</p>
+            <p><strong>運作原理：</strong>
+                分配兩個獨立的 Slot (含 Stream 與 Buffers)。當主機正在讀取「批次 k+1」時，GPU 正在另一條 Stream 上計算「批次 k」。
+            </p>
+            <p><strong>結果：</strong>將 I/O 傳輸時間成功隱藏 (Overlap) 在計算時間之後。這是純 CuPy 計算線在排程上的最高境界。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 15 -->
+<div class="slide-container">
+    <h2 class="slide-title">v6: Mixed Precision (精度實驗)</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>data_loader_v6_cupy_mixed_precision.py <span class="badge">v6_mixed</span></h3>
+            <p><strong>設計：</strong>將灰階計算公式改用 <strong>float16 (fp16)</strong>，試圖節省一半的記憶體頻寬。</p>
+            <p><strong>發現 1 (精度取捨)：</strong>fp16 只有 11-bit 尾數，會導致處於門檻邊緣的 Patch 決策翻轉，無法保證 100% 吻合 baseline。</p>
+            <p><strong>發現 2 (硬體陷阱)：</strong>在 Pascal 架構 (如 GTX 1060) 上，fp16 的吞吐量被閹割，實際上跑得<strong>比 v2 還慢</strong>。只有 Volta 以後的架構才划算。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 16 -->
+<div class="slide-container">
+    <h2 class="slide-title">v7: Memory-Optimized (低 VRAM 救星)</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>data_loader_v7_cupy_memory_optimized.py <span class="badge">v7_memopt</span></h3>
+            <p><strong>設計：</strong>針對 3GB VRAM 等低階顯卡設計。撰寫了 <strong>Fused (融合) uint8 Kernel</strong>。</p>
+            <p><strong>原理：</strong>在單一 Kernel 中直接完成 `RGB -&gt; 整數 Luma` 的計算與寫出。原本 v2 需要物化龐大的 `uint32` 中間陣列，v7 讓這個陣列「從不存在」。</p>
+            <p><strong>結果：</strong>峰值 VRAM 佔用從輸入的 ~5x 銳減至 ~1.33x，徹底解決 OOM 問題。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 17 -->
+<div class="slide-container">
+    <h2 class="slide-title">v8: Optimized for 4060 (釋放 GIL)</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>data_loader_v8_cupy_optimized_4060.py <span class="badge">v8_4060</span></h3>
+            <p><strong>重大轉折：</strong>第一次將優化火力轉向「餵料側 (Feed side)」。</p>
+            <p><strong>設計：</strong>利用 <span class="mono">ThreadPoolExecutor</span> 建立多個 OpenSlide reader。<br>
+               因為 <span class="mono">libopenslide</span> 在底層解碼時會釋放 Python 的 GIL，這實現了真正的<strong>多執行緒並行讀取</strong>。</p>
+            <p><strong>結果：</strong>效能大幅躍升。這暗示了真正的瓶頸其實一直在 CPU 端。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 18 -->
+<div class="slide-container">
+    <h2 class="slide-title">v9: Ultimate GPU (集大成與消融)</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>data_loader_v9_ultimate_gpu.py <span class="badge">v9_ultimate</span></h3>
+            <p><strong>設計：</strong>將 v1 到 v7 的所有運算優化（Pinned, Async, Fused Kernel 等 7 個 Layer）全部堆疊在一起，並採用設定驅動 (Config-driven)。</p>
+            <p><strong>目的：</strong>建立一個可用於「消融研究 (Ablation)」的載體，可單獨開關每一層來量測貢獻。</p>
+            <p><strong>反思：</strong>雖然它是 CuPy 計算線的最強體，但它優化的是「從來就不是瓶頸」的部分。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 19 -->
+<div class="slide-container">
+    <h2 class="slide-title">轉折點：Hardware Probe 診斷</h2>
+    <div class="content-area">
+        <div class="file-card alt">
+            <h3>hardware_probe.py <span class="badge">Diagnostic</span></h3>
+            <p>這個腳本是整個專案的靈魂。它量測了 PCIe 帶寬與 GPU 實際 Kernel 吞吐量。</p>
+            <p><strong>殘酷的真相：</strong>數據顯示，GPU Luma 過濾可達 ~17,500 patches/s，但 CPU 單核讀取只有 ~27 patches/s。</p>
+            <p style="color:#64FFDA; font-weight:700; font-size: 24px; margin-top:15px;">結論：GPU 處於 98% 閒置狀態（被餓死），真正的瓶頸是 CPU 解碼！</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 20 -->
+<div class="slide-container">
+    <h2 class="slide-title">v10: Parallel I/O (資料驅動的正解)</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>data_loader_v10_parallel_io_gpu.py <span class="badge">v10_par_io</span></h3>
+            <p><strong>行動：</strong>依據 Probe 的結果，徹底放生對 GPU 核心的微調。</p>
+            <p><strong>設計：</strong>建立一個 Reader-Thread Pool，每個執行緒擁有自己的 OpenSlide Handle，瘋狂並行解碼填入 Pinned Buffer，再批次丟給 GPU。</p>
+            <p><strong>結果：</strong>這是硬體 (CPU 解碼) 允許下的最快設計。促使研究正式邁入下一階段：如何消滅 CPU 解碼。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 21: SECTION 4 -->
+<div class="slide-container">
+    <div class="section-title-layout">
+        <hr><h2>線 B: GPU 解碼線 (v11 - v22)</h2>
+        <p>拔掉 CPU 解碼地板，挑戰硬體極限</p>
+    </div>
+</div>
+
+<!-- SLIDE 22 -->
+<div class="slide-container">
+    <h2 class="slide-title">v11: First GPU-Decode (nvJPEG)</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>data_loader_v11_gpu_decode_5090.py <span class="badge">v11_gpudec</span></h3>
+            <p><strong>革命性架構：繞過 OpenSlide。</strong></p>
+            <p>自行解析 TIFF 標籤 (Tag 324/325)，直接讀取原始壓縮的 baseline JPEG 位元組。</p>
+            <p>交由 <span class="mono">torchvision.io.decode_jpeg(device='cuda')</span> 驅動 NVIDIA <strong>nvJPEG 硬體解碼器</strong>進行 GPU 批次解碼。</p>
+            <p><strong>代價：</strong>nvJPEG 的 YCbCr-&gt;RGB 轉換與 libjpeg 有微小差異 (±1 LSB)，導致極少數 Patch 決策翻轉，打破了 100% 吻合的承諾。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 23 -->
+<div class="slide-container">
+    <h2 class="slide-title">v12 &amp; v13: nvJPEG 餵料消融</h2>
+    <div class="content-area">
+        <div class="two-column">
+            <div class="file-card">
+                <h3>v12_dec_mono <span class="badge">data_loader_v12_gpu_decode_mono.py</span></h3>
+                <p><strong>Ablation Cell:</strong> 單執行緒讀原始 Tile + nvJPEG 解碼。</p>
+                <p>用於隔離「純特化 GPU 解碼」所帶來的效益 (相對 v0a)。<br>吞吐量：<span class="highlight">2378.2 p/s</span></p>
+            </div>
+            <div class="file-card">
+                <h3>v13_dec_multi <span class="badge">data_loader_v13_gpu_decode_multi.py</span></h3>
+                <p><strong>Ablation Cell:</strong> 多執行緒讀原始 Tile + nvJPEG 解碼。</p>
+                <p>對比 v12 可精確量測「讀取並行化」的純粹加成。<br>吞吐量：<span class="highlight">1608.2 p/s</span> (受限於 I/O 鎖定機制)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 24 -->
+<div class="slide-container">
+    <h2 class="slide-title">v14 &amp; v15: Naive CUDA 解碼</h2>
+    <div class="content-area">
+        <div class="two-column">
+            <div class="file-card">
+                <h3>v14_cmp_mono <span class="badge">data_loader_v14_gpu_compute_mono.py</span></h3>
+                <p>不依賴 nvJPEG，改呼叫<strong>手寫 CUDA 核心</strong> (Naive 版)。</p>
+                <p>一個 CUDA Thread 處理一個 Tile。展示通用 CUDA 核心的解碼潛力。<br>吞吐量：<span class="highlight">3194.4 p/s</span></p>
+            </div>
+            <div class="file-card">
+                <h3>v15_cmp_multi <span class="badge">data_loader_v15_gpu_compute_multi.py</span></h3>
+                <p>多執行緒讀取 + Naive CUDA 解碼。</p>
+                <p>證明了不依賴第三方影像庫，直接在通用 GPU 核心上解碼醫療影像瓦片是極具競爭力的方案。</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 25 -->
+<div class="slide-container">
+    <h2 class="slide-title">v16 &amp; v17: Optimized CUDA 解碼</h2>
+    <div class="content-area">
+        <div class="file-card alt">
+            <h3>v16_opt_mono <span class="badge">data_loader_v16_cuda_opt_mono.py</span></h3>
+            <p><strong>全專案吞吐量冠軍：<span class="highlight" style="font-size:28px;">4734.4 patches/sec (62.00x)</span></strong></p>
+            <p>換上了 <code>_optimized</code> 版本的 CUDA 核心。利用暫存器緩衝、常數記憶體，以及 <strong>Fused YCbCr-&gt;Luma Kernel</strong> (不產生 RGB)，將硬體效能榨乾。</p>
+        </div>
+        <div class="file-card alt">
+            <h3>v17_opt_multi <span class="badge">data_loader_v17_cuda_opt_multi.py</span></h3>
+            <p>v16 + Threaded reads (多執行緒讀取)。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 26 -->
+<div class="slide-container">
+    <h2 class="slide-title">v18 &amp; v19: Ultimate Pipeline (假並行現形)</h2>
+    <div class="content-area">
+        <div class="two-column">
+            <div class="file-card">
+                <h3>v18_ult_mono <span class="badge">..._v18_cuda_ultimate_mono.py</span></h3>
+                <p><strong>終極管線：</strong> v16 kernel + Pinned Memory + 雙緩衝 Async Streams + Buffer Pool。</p>
+                <p>透過 <span class="mono">submit() / fetch()</span> 驅動，吞吐量穩定在 <span class="highlight">3247.2 p/s</span>。</p>
+            </div>
+            <div class="file-card">
+                <h3>v19_ult_multi <span class="badge">..._v19_cuda_ultimate_multi.py</span></h3>
+                <p><strong>失敗的並行：</strong> 導入 Thread Pool 讀取。但所有 Thread <strong>共用同一個 file object 與 lock</strong>，導致讀取實際上是序列化的 (Serial)。</p>
+                <p>效能反而跌至 <span class="highlight">2560.7 p/s</span>。</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 27 -->
+<div class="slide-container">
+    <h2 class="slide-title">v20: True Parallel Reads (真並行讀取)</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>data_loader_v20_cuda_ultimate_pread.py <span class="badge">v20_ult_pread</span></h3>
+            <p><strong>修正 v19 的錯誤：</strong> 捨棄標準的 <code>seek + read</code>。</p>
+            <p>改用作業系統層級的 <strong><span class="mono" style="font-size:22px; color:#64FFDA;">os.pread(fd, length, offset)</span></strong>。</p>
+            <p>這是一個原子性的系統呼叫 (Syscall)，不需鎖定檔案指標。徹底解放了 GIL，實現真正的多執行緒磁碟 I/O。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 28 -->
+<div class="slide-container">
+    <h2 class="slide-title">v21: Prefetch Pipeline (移出關鍵路徑)</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>data_loader_v21_cuda_ultimate_pipeline.py <span class="badge">v21_ult_pipe</span></h3>
+            <p><strong>架構改造 (Producer/Consumer)：</strong><br>
+               v20 的讀取雖是平行的，但仍卡在主執行緒的 <span class="mono">pool.map</span> 派發上，導致 GPU 批次間出現空窗期。</p>
+            <p>v21 建立專屬的 Producer Thread 不斷預讀 (Prefetch) 批次資料放入 Queue，主執行緒 (Consumer) 只負責與 GPU 溝通 (<span class="mono">submit / fetch</span>)。讀取完全移出關鍵路徑。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 29 -->
+<div class="slide-container">
+    <h2 class="slide-title">v22: Parallel Read + Destuff (單 GPU 極限)</h2>
+    <div class="content-area">
+        <div class="file-card alt">
+            <h3>data_loader_v22_cuda_parallel_destuff.py <span class="badge">v22_par_destuff</span></h3>
+            <p><strong>最後的阻礙：</strong> v21 的主執行緒仍需做 JPEG Byte-destuffing (將 <code>\xff\x00</code> 轉為 <code>\xff</code>)，這是一個沉重的 Python 序列化負擔 (每批次處理 ~190MB)。</p>
+            <p><strong>終極解法：</strong> 將 Destuffing 任務也丟進 Reader Threads 處理。</p>
+            <p>至此，主迴圈的所有序列 Host 工作完全消失，執行速度<strong>純粹被 GPU 解碼吞吐量綑綁</strong>。這是單一 GPU 的理論極限架構。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 30: SECTION 5 -->
+<div class="slide-container">
+    <div class="section-title-layout">
+        <hr><h2>線 C: 解碼世界重演線 (v23 - v32)</h2>
+        <p>在 GPU 解碼的新宇宙中，驗證 v1-v10 的每一條定律</p>
+    </div>
+</div>
+
+<!-- SLIDE 31 -->
+<div class="slide-container">
+    <h2 class="slide-title">基礎對照 (v23 - v26)</h2>
+    <div class="content-area">
+        <div class="two-column">
+            <div class="file-card">
+                <h3>v23_dec_v1 <span class="badge">maps to v1 (Naive)</span></h3>
+                <p><strong>Batch=1 硬編碼。</strong>每個 Tile 單獨送 GPU。展示為何必須 Batching，因為傳輸開銷會完全摧毀效能。</p>
+            </div>
+            <div class="file-card">
+                <h3>v24_dec_v2 <span class="badge">maps to v2 (Batch)</span></h3>
+                <p>將 Tile 打包。導入自動評估剩餘 VRAM 以決定最佳 Batch Size 的機制。</p>
+            </div>
+            <div class="file-card">
+                <h3>v25_dec_v3 <span class="badge">maps to v3 (Hybrid)</span></h3>
+                <p>當 Tile 數量過少或 VRAM 嚴重不足時，退回 CPU 使用 OpenSlide 解碼與計算。</p>
+            </div>
+            <div class="file-card">
+                <h3>v26_dec_v4 <span class="badge">maps to v4 (Pinned)</span></h3>
+                <p>讓上游的 Read-staging 緩衝區也使用鎖頁記憶體，達成 <strong>End-to-End Pinned</strong> (File -&gt; Buffer -&gt; GPU)。</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 32 -->
+<div class="slide-container">
+    <h2 class="slide-title">進階對照 (v27 - v29)</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>v27_dec_v5 <span class="badge">maps to v5 (Async)</span></h3>
+            <p>薄包裝 (Thin re-export) <strong>等於 v18</strong>。因為 `GpuJpegDecoderUltimate` 本身已經實作了雙緩衝非同步串流。</p>
+        </div>
+        <div class="file-card">
+            <h3>v28_dec_v6 <span class="badge">maps to v6 (fp16)</span></h3>
+            <p>與 v6 不同，這次我們直接擷取 GPU 解碼出來的 <strong>Y Plane (亮度)</strong>，轉為 fp16 進行計數。不僅省頻寬，解碼精度亦不妥協。</p>
+        </div>
+        <div class="file-card">
+            <h3>v29_dec_v7 <span class="badge">maps to v7 (Mem Budget)</span></h3>
+            <p>接受 <span class="mono">vram_budget_gb</span> 參數。嚴格控制批次大小，並在每 Chunk 結束時釋放記憶體，保護低階顯卡。<br>吞吐量：<span class="highlight">4656.8 p/s</span> (效率極高)</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 33 -->
+<div class="slide-container">
+    <h2 class="slide-title">管線對照 (v30 - v32)</h2>
+    <div class="content-area">
+        <div class="file-card">
+            <h3>v30_dec_v8 <span class="badge">maps to v8 (Threaded)</span></h3>
+            <p>重演多執行緒讀取。使用 <span class="mono">os.pread</span> 並行讀取原始資料，無鎖平行化。</p>
+        </div>
+        <div class="file-card">
+            <h3>v31_dec_v9 <span class="badge">maps to v9 (Combined)</span></h3>
+            <p>薄包裝 <strong>等於 v22</strong>。所有優化 (Batch + Pinned + Async + 並行讀 + 並行 Destuff) 全部開啟。</p>
+        </div>
+        <div class="file-card">
+            <h3>v32_dec_v10 <span class="badge">maps to v10 (Pipeline)</span></h3>
+            <p>薄包裝 <strong>等於 v21</strong>。專屬 Producer 預取 (Prefetch) 架構，Consumer 只負責 GPU 工作。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 34: SECTION 6 -->
+<div class="slide-container">
+    <div class="section-title-layout">
+        <hr><h2>CUDA 引擎深度解析</h2>
+        <p>The Hand-Written CUDA JPEG Decoders (Naive vs Optimized vs Ultimate)</p>
+    </div>
+</div>
+
+<!-- SLIDE 35 -->
+<div class="slide-container">
+    <h2 class="slide-title">手寫 CUDA 核心系列</h2>
+    <div class="content-area">
+        <p style="font-size: 20px; color: #94A3B8; margin-bottom: 25px;">這三個版本都不使用 nvJPEG，完全依賴自研 CuPy RawKernel。三者輸出<strong>逐位元相同 (bit-identical)</strong>，差別純粹在效能。</p>
+        <div class="file-card">
+            <h3>gpu_jpeg_decoder.py <span class="badge">Naive Baseline</span></h3>
+            <p>一個 Thread 解碼一個 Tile，純靠「跨 tile 平行」。刻意不優化，使用全域記憶體與浮點數 IDCT。</p>
+        </div>
+        <div class="file-card">
+            <h3>gpu_jpeg_decoder_optimized.py <span class="badge">Optimized</span></h3>
+            <p>把核心調到榨乾顯卡：暫存器位元緩衝、8-bit Huffman LUT、常數記憶體、DC-only 快路徑、以及<strong>解碼與亮度計數融合</strong>。</p>
+        </div>
+        <div class="file-card">
+            <h3>gpu_jpeg_decoder_ultimate.py <span class="badge">Ultimate</span></h3>
+            <p>在 Optimized 之上再疊加**傳輸/重疊層** (Pinned memory, 雙緩衝 Async stream, 緩衝池)，驅動異步管線。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 36: Decode Stage Only (FIXED TO 5090 WALL TIMES) -->
+<div class="slide-container">
+    <h2 class="slide-title">解碼效能殊死戰 <span>(Decode-Stage Only)</span></h2>
+    <div class="content-area">
+        <p style="font-size:20px; color:#E2E8F0; margin-bottom:30px;">
+            如果我們剝離所有的前後處理，單純比較「解碼運算」的時間 (RTX 5090 實測，處理 ~19,800 個 Tiles)：<br>
+            <span style="color:#64FFDA;">Optimized 不僅打敗了 Naive，甚至超越了特化固定硬體 (nvJPEG)！</span>
+        </p>
+        <div class="chart-container">
+            <div class="bar">
+                <div class="label" style="text-align: left; flex: 0 0 200px;">CPU libjpeg (v0a)</div>
+                <div class="bar-inner"><div class="bar-fill" style="width: 100%; background: #475569; color: #fff;">64.81s (1.0x)</div></div>
+            </div>
+            <div class="bar">
+                <div class="label" style="text-align: left; flex: 0 0 200px;">nvJPEG (v12)</div>
+                <div class="bar-inner"><div class="bar-fill" style="width: 10%;">2.08s (~31.1x)</div></div>
+            </div>
+            <div class="bar">
+                <div class="label" style="text-align: left; flex: 0 0 200px;">CUDA Naive (v14)</div>
+                <div class="bar-inner"><div class="bar-fill" style="width: 8%;">1.55s (~41.8x)</div></div>
+            </div>
+            <div class="bar">
+                <div class="label" style="text-align: left; flex: 0 0 200px; color: #64FFDA;">CUDA Optimized (v16)</div>
+                <div class="bar-inner"><div class="bar-fill gold" style="width: 5%;">1.05s (62.0x)</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 37: 6 Levers of Optimized -->
+<div class="slide-container">
+    <h2 class="slide-title">六大核心調校 <span>(Why Optimized Wins)</span></h2>
+    <div class="content-area">
+        <p style="font-size: 18px; color: #94A3B8; margin-bottom: 20px;">將 Naive 的 1.55s 壓縮到 1.05s (突破 NVIDIA 硬體解碼器) 的六個平凡但致命的工程技巧：</p>
+        <div class="two-column" style="gap: 20px;">
+            <div class="file-card alt" style="padding: 15px 25px; margin-bottom: 0;">
+                <h3 style="font-size: 20px; color: #FFFFFF;">1. 暫存器位元緩衝</h3>
+                <p style="font-size: 16px;">(Register bit-buffer) 每讀 1 bit 就做 global load 太慢。改為 32-bit 暫存器累加器，一次讀 1 byte，記憶體流量銳減。</p>
+            </div>
+            <div class="file-card alt" style="padding: 15px 25px; margin-bottom: 0;">
+                <h3 style="font-size: 20px; color: #FFFFFF;">2. 8-bit Huffman LUT</h3>
+                <p style="font-size: 16px;">絕大多數短碼 (≤8 bits) 直接透過常數記憶體「一次查表」解出，省去逐位元比對的迴圈。</p>
+            </div>
+            <div class="file-card alt" style="padding: 15px 25px; margin-bottom: 0;">
+                <h3 style="font-size: 20px; color: #FFFFFF;">3. 常數記憶體廣播</h3>
+                <p style="font-size: 16px;">將所有熱點表 (Huffman, Quant, IDCT Cos) 放進 <span class="mono">__constant__</span>，利用 Warp 廣播讀取，節省全域頻寬。</p>
+            </div>
+            <div class="file-card alt" style="padding: 15px 25px; margin-bottom: 0;">
+                <h3 style="font-size: 20px; color: #FFFFFF;">4. DC-only 快路徑</h3>
+                <p style="font-size: 16px;">平滑背景通常沒有 AC 係數。直接算出常數填滿區塊，跳過 1024 次 MAC 乘加運算。</p>
+            </div>
+            <div class="file-card alt" style="padding: 15px 25px; margin-bottom: 0;">
+                <h3 style="font-size: 20px; color: #64FFDA;">5. 融合計數 (不產生 RGB)</h3>
+                <p style="font-size: 16px;">這點贏過 nvJPEG！將 YCbCr-&gt;Luma-&gt;黑白計數融合成一個 Pass。**整張 RGB 從不被寫出**，VRAM 需求極小化。</p>
+            </div>
+            <div class="file-card alt" style="padding: 15px 25px; margin-bottom: 0;">
+                <h3 style="font-size: 20px; color: #FFFFFF;">6. 啟動參數調校</h3>
+                <p style="font-size: 16px;">IDCT 區域變數極重，偏好低 Occupancy。實測發現 32 threads/block 效能最佳。</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 38: The Ultimate Paradox (Amdahl's Law) -->
+<div class="slide-container">
+    <h2 class="slide-title">Ultimate 管線的矛盾 <span>(Amdahl 定律的無情制裁)</span></h2>
+    <div class="content-area">
+        <div class="two-column highlight-numbers-layout">
+            <div>
+                <div class="number" style="font-size: 90px;">~0%</div>
+                <div class="number-label">Ultimate 帶來的牆鐘加速<br>(相比於 Optimized)</div>
+            </div>
+            <div>
+                <h3>為什麼疊滿神級優化反而撞牆？</h3>
+                <p>Ultimate 實作了所有傳輸與重疊層 (Pinned, Stream, Pool)，成功讓 GPU 等待 Host 的時間 (gpu-wait) 降到了完美的 **0.000s**。但總耗時卻幾乎不變。</p>
+                <ul style="list-style: none; padding-left: 10px; margin-top: 15px; font-size: 18px; color: #E2E8F0; line-height: 1.6;">
+                    <li style="margin-bottom: 8px;"><span class="highlight-alt">&gt;</span> <strong>Compute-Bound 的詛咒：</strong> 在暖快取的 SSD 上，Host 讀取耗時極低 (~7%)，絕大部分時間都在 GPU 解碼。</li>
+                    <li style="margin-bottom: 8px;"><span class="highlight-alt">&gt;</span> <strong>藏起 7% 等於 0%：</strong> 管線成功把微小的 I/O 時間藏到 GPU 運算後面，但 GPU 依然要苦命算完數學。加上排程的微小開銷，甚至偶爾慢一點點。</li>
+                </ul>
+                <p style="margin-top: 20px; color: #64FFDA;"><strong>結論：傳輸/重疊優化只有在 I/O 成為真實瓶頸 (例如冷快取、HDD 或 NFS) 時才有回報。</strong></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 39: Decoder Sub-findings -->
+<div class="slide-container">
+    <h2 class="slide-title">解碼器研究的關鍵副發現</h2>
+    <div class="content-area">
+        <div class="bullet-list" style="margin-top: 20px;">
+            <ul>
+                <li>
+                    <i class="fa-solid fa-layer-group"></i>
+                    <strong>跨 Tile 平行是最大的第一槓桿 (1x → 13x)</strong>
+                    <br>就算是最 Naive 的寫法，只要把近 2 萬張獨立的 Tile 丟到 GPU 同時解碼，就能將數十秒的牆鐘時間砍到個位數。
+                </li>
+                <li>
+                    <i class="fa-solid fa-wrench"></i>
+                    <strong>核心調校是第二大槓桿 (13x → 47x / 62x)</strong>
+                    <br>針對 GPU 架構特性（減少全域讀取、使用常數記憶體、減少 VRAM 寫出）進行的底層工程，是突破硬體極限的唯一途徑。
+                </li>
+                <li>
+                    <i class="fa-solid fa-people-arrows"></i>
+                    <strong>GPU 解碼後，多執行緒讀取反而有害 (Mono &gt; Multi)</strong>
+                    <br>實測發現 v17 &lt; v16，v19 &lt; v18。當解碼引擎上了 GPU，CPU 
+端單純的讀取已不再是瓶頸；此時開 20 條 Thread 去搶單一檔案的 Handle，只會徒增 GIL 
+與鎖定競爭。因此，最強的解碼核心都應該搭配 **Mono (單執行緒)** 餵食。
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 40: SECTION 7 -->
+<div class="slide-container">
+    <div class="section-title-layout">
+        <hr><h2>效能驗證與測試框架</h2>
+        <p>Benchmark &amp; Validation Tooling</p>
+    </div>
+</div>
+
+<!-- SLIDE 41 -->
+<div class="slide-container">
+    <h2 class="slide-title">底層除錯與測量工具</h2>
+    <div class="content-area">
+        <div class="tiled-content">
+            <div class="tile">
+                <div class="icon"><i class="fa-solid fa-cogs"></i></div>
+                <h3>test_performance_framework.py</h3>
+                <p>核心大腦。維護 <code>IMPLEMENTATIONS</code> 字典，動態映射 30+ 版本的 Import-safe 隔離測試器。</p>
+            </div>
+            <div class="tile">
+                <div class="icon"><i class="fa-solid fa-stopwatch"></i></div>
+                <h3>benchmark_runner.py</h3>
+                <p>計時器與報告產生器。負責輸出結構化的 <code>benchmark_*.json</code> 實驗數據。</p>
+            </div>
+            <div class="tile">
+                <div class="icon"><i class="fa-solid fa-vial-circle-check"></i></div>
+                <h3>numerical_validation.py</h3>
+                <p>嚴酷的正確性防線。確保無論 GPU 用何種精度計算，輸出的保留座標集合 (Jaccard) 必須 100% 吻合 PIL。</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 42: SECTION 8 -->
+<div class="slide-container">
+    <div class="section-title-layout">
+        <hr><h2>階段性驗證套件</h2>
+        <p>The Phased Test Suite (Phase 0 - 6)</p>
+    </div>
+</div>
+
+<!-- SLIDE 43 -->
+<div class="slide-container">
+    <h2 class="slide-title">測試推進：Phase 0 - Phase 3</h2>
+    <div class="content-area">
+        <div class="bullet-list">
+            <ul>
+                <li><strong>Phase 0 (Baseline):</strong> <span class="mono">test_00_baseline_comparison.py</span><br>防護網測試。證明 v0a -&gt; GPU 的加速是真實且 100% 正確的。</li>
+                <li><strong>Phase 1 (Single Patch):</strong> <span class="mono">test_01_single_patch.py</span><br>剝離 I/O 干擾，單純比較 CPU 與 GPU 單次過濾的運算時間。</li>
+                <li><strong>Phase 2 (Batch Grid):</strong> <span class="mono">test_02_batch_filtering.py</span><br>採用不同 Stride 進行模擬，尋找 GPU 加速的「損益平衡點」。</li>
+                <li><strong>Phase 3 (End-to-end):</strong> <span class="mono">test_03_end_to_end_dataloader.py</span><br>針對 DataLoader 的 <span class="mono">__getitem__</span> 行為重構，確保檢索路徑暢通。</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 44 -->
+<div class="slide-container">
+    <h2 class="slide-title">測試推進：Phase 4 - Phase 6</h2>
+    <div class="content-area">
+        <div class="bullet-list">
+            <ul>
+                <li><strong>Phase 4 (Memory):</strong> <span class="mono">test_04_memory_profiling.py</span><br>追蹤 GPU Peak Memory，計算 Bytes/candidate 成本，檢測記憶體洩漏。</li>
+                <li><strong>Phase 5 (Scalability):</strong> <span class="mono">test_05_scalability.py</span><br>分析隨 Patch Size 增大，系統效能如何平滑擴展。</li>
+                <li><strong>Phase 6 (Integration):</strong> <span class="mono">test_06_integration_training.py</span><br>最底線考驗。模擬完整神經網路訓練迴圈，具體量化「資料載入」佔據一個 Training Step 的時間下降比例。</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 45: SECTION 9 -->
+<div class="slide-container">
+    <div class="section-title-layout">
+        <hr><h2>數據成果與核心領悟</h2>
+        <p>Results &amp; 6 Core Takeaways</p>
+    </div>
+</div>
+
+<!-- SLIDE 46: HIGHLIGHT 62x -->
+<div class="slide-container">
+    <h2 class="slide-title">突破極限：62.00 倍加速的意義</h2>
+    <div class="content-area">
+        <div class="two-column highlight-numbers-layout">
+            <div>
+                <div class="number" style="font-size: 140px; color: #64FFDA;">62x</div>
+                <div class="number-label" style="font-size: 26px;">從 64.8 秒縮短至 1.05 秒</div>
+            </div>
+            <div>
+                <h3 style="font-size: 30px; margin-bottom: 20px;">榨乾硬體效能的極致</h3>
+                <p>透過徹底移除 CPU 解碼的瓶頸，並將自研 CUDA 核心調校至暫存器與常數記憶體層級，我們達成了驚人的 62.00 倍端到端加速。</p>
+                <p>這代表著原先處理一張 Gigapixel 醫療影像需要超過一分鐘的時間，現在<strong>僅需約 1 秒鐘</strong>即可完成所有讀取、解碼與組織篩選任務。</p>
+                <ul style="list-style: none; padding-left: 10px; margin-top: 25px; font-size: 20px; color: #E2E8F0; line-height: 1.8;">
+                    <li style="margin-bottom: 8px;"><span class="highlight-alt">&gt;</span> 突破了 OpenSlide 的單核/多核限制</li>
+                    <li style="margin-bottom: 8px;"><span class="highlight-alt">&gt;</span> 超越了 NVIDIA nvJPEG 的特化硬體解碼速度</li>
+                    <li style="margin-bottom: 8px;"><span class="highlight-alt">&gt;</span> 完美保持了與 PIL 運算 100% 的位元級精確度</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 47: 5090 CHART -->
+<div class="slide-container">
+    <h2 class="slide-title">全域基準測試圖表 (RTX 5090)</h2>
+    <div class="content-area">
+        <div class="image-wrapper" style="height: 550px; border: none;">
+            <img src="WSI%20Patch-Filtering_%20Extended%20Study%20(v1-v32)_files/benchmark_20260617_132815.png" alt="WSI patch-filtering 5090 speedup chart" style="object-fit: contain; width: 100%; height: 100%;">
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 48: TOP RANKINGS -->
+<div class="slide-container">
+    <h2 class="slide-title">效能王者：吞吐量指標</h2>
+    <div class="content-area">
+        <p style="font-size:20px; color:#94A3B8; margin-bottom:30px;">依據 <code>benchmark_20260617_132815.json</code> 實驗數據 (Baseline v0a = 76.4 p/s)</p>
+        <div class="chart-container">
+            <div class="bar">
+                <div class="label">v16_opt_mono (62.0x)</div>
+                <div class="bar-inner"><div class="bar-fill" style="width: 100%;">4734.4 p/s</div></div>
+            </div>
+            <div class="bar">
+                <div class="label">v24_dec_v2 (61.4x)</div>
+                <div class="bar-inner"><div class="bar-fill" style="width: 99%;">4690.7 p/s</div></div>
+            </div>
+            <div class="bar">
+                <div class="label">v25_dec_v3 (61.3x)</div>
+                <div class="bar-inner"><div class="bar-fill" style="width: 99%;">4683.8 p/s</div></div>
+            </div>
+            <div class="bar">
+                <div class="label">v29_dec_v7 (61.0x)</div>
+                <div class="bar-inner"><div class="bar-fill" style="width: 98%;">4656.8 p/s</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 49: RTX 4060 Validation with Chart -->
+<div class="slide-container">
+    <h2 class="slide-title">跨硬體驗證：RTX 4060 筆電實測</h2>
+    <div class="content-area">
+        <div class="two-column" style="grid-template-columns: 38% 62%; gap: 30px; height: 100%;">
+            <div style="display: flex; flex-direction: column; justify-content: center;">
+                <div class="number" style="font-size: 90px; font-weight: bold; color: #64FFDA; line-height: 1; font-family: 'Poppins';">18.3x</div>
+                <p style="font-size: 22px; font-weight: 600; color: #FFFFFF; margin-top: 10px; margin-bottom: 25px;">最高加速倍率 (v31)</p>
+                <p style="font-size: 18px; color: #E2E8F0; line-height: 1.6;">此測試驗證了效能提升並非單純依賴 5090 算力碾壓。在資源受限的筆電環境下，移除 I/O 瓶頸與管線化 (Pipeline) 依然能榨出硬體的物理極限。</p>
+                <p style="font-size: 18px; color: #FBBF24; margin-top: 20px; line-height: 1.6; padding-left: 15px; border-left: 3px solid #FBBF24;">
+                    <strong>有趣的發現：</strong><br>在 4060 上，具備異步管線排程的 <code>v31</code> 略勝了 5090 的王者 <code>v16</code>，印證了不同硬體對於管線化有著不同的最佳化甜蜜點。
+                </p>
+            </div>
+            <div class="image-wrapper" style="height: 500px; border: 1px solid rgba(255,255,255,0.1); background: #ffffff; padding: 5px;">
+                <img src="WSI%20Patch-Filtering_%20Extended%20Study%20(v1-v32)_files/benchmark_gpu_decode_20260613_203631.png" alt="RTX 4060 Benchmark Chart" style="object-fit: contain; width: 100%; height: 100%;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 50 -->
+<div class="slide-container">
+    <h2 class="slide-title">核心領悟 1 &amp; 2</h2>
+    <div class="content-area">
+        <div class="file-card alt">
+            <h3>1. 批次化 &gt; 用不用 GPU <span class="badge">v1 → v2</span></h3>
+            <p>單純將運算移交 GPU 不保證變快。傳輸與啟動開銷極高，只有將資料打包 (Batching) 攤平開銷，GPU 加速才具備經濟效益。</p>
+        </div>
+        <div class="file-card alt">
+            <h3>2. 優化要打在瓶頸上 <span class="badge">v9 vs v10</span></h3>
+            <p>v1-v9 拼命優化 GPU 計算，但診斷顯示 GPU 高達 98% 處於閒置狀態。<br><strong>真正的瓶頸是 CPU 解碼！</strong>將解碼並行化 (v10) 才是治本的正解。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 51 -->
+<div class="slide-container">
+    <h2 class="slide-title">核心領悟 3 &amp; 4</h2>
+    <div class="content-area">
+        <div class="file-card alt">
+            <h3>3. 拔掉地板 (Eliminate the Floor) <span class="badge">v11 - v22</span></h3>
+            <p>若 CPU 解碼速度永遠跟不上 GPU，就連根拔起，將 **JPEG 解碼本身** 移至 GPU 執行，徹底消滅 CPU 解碼帶來的硬性地板。</p>
+        </div>
+        <div class="file-card alt">
+            <h3>4. 「並行」不只是有沒有，而在哪跑 <span class="badge">v19 → v20 → v21 → v22</span></h3>
+            <p>
+                - 假並行：共用 File Descriptor 與 Lock (v19)。<br>
+                - 真並行：使用無鎖的 <code>os.pread</code> (v20)。<br>
+                - 移出關鍵路徑：Producer/Consumer 架構 (v21)。<br>
+                - 最終極限：連 Byte-destuff 都並行處理 (v22)。
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 52 -->
+<div class="slide-container">
+    <h2 class="slide-title">核心領悟 5 &amp; 6</h2>
+    <div class="content-area">
+        <div class="file-card alt">
+            <h3>5. 單 GPU 的物理極限 <span class="badge">v22</span></h3>
+            <p>當 Host 端餵料全並行，且所有序列工作搬離關鍵路徑後，耗時完全等於「單一 GPU 硬體解碼時間」。要再突破只能依賴多 GPU 分片。</p>
+        </div>
+        <div class="file-card alt">
+            <h3>6. 正確性貫穿全程 <span class="badge">Validation</span></h3>
+            <p>效能無意義，若不具備正確性。整數 Luma 路徑必須位元等同 PIL。使用 fp16 或是手寫 float-IDCT 所產生的 ±1 LSB 漂移，都必須被量化記錄 (Kept-set delta)。</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 53 -->
+<div class="slide-container">
+    <h2 class="slide-title">技術地圖總結 (The Evolution Flow)</h2>
+    <div class="content-area">
+        <div class="flow-chart">
+            <span class="a">Line A (CuPy)</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="b">Line B (GPU Decode)</span>
+ 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c">Line C (Remapping)</span><br><br>
+            v1 Naive ──────────┐<br>
+            v2 Batch ──────────┼──────────────────────────────► <span class="c">v24 dec_v2</span><br>
+            v3 Hybrid ─────────┼──────────────────────────────► <span class="c">v25 dec_v3</span><br>
+            v4 Pinned ─────────┼──────────────────────────────► <span class="c">v26 dec_v4</span><br>
+            v5 Async ──────────┼──────────────────────────────► <span class="c">v27 (= v18)</span><br>
+            v7 MemOpt ─────────┼──────────────────────────────► <span class="c">v29 dec_v7</span><br>
+            v8 Threaded ⚡ ─────┘<br>
+            v10 Parallel IO ⚡ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="b">v11 nvJPEG (拔除 CPU)</span><br>
+            
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="b">v16/v17 CUDA Opt</span><br>
+            
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="b">v18/v19 Ultimate</span> ──► <span class="c">v27 / v23</span><br>
+            
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="b">v20 os.pread</span> ──────► <span class="c">v30 dec_v8</span><br>
+            
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="b">v21 Pipeline</span> ──────► <span class="c">v32 dec_v10</span><br>
+            
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="b">v22 Par-Destuff</span> ───► <span class="c">v31 dec_v9</span>
+        </div>
+    </div>
+</div>
+
+<!-- 最終頁: Q&A -->
+<div class="slide-container">
+    <div class="section-title-layout">
+        <h2 style="font-size: 100px;">Q &amp; A</h2>
+        <p style="font-size: 32px; color: #FFFFFF; margin-top: 20px;">感謝您的聆聽</p>
+        <p style="font-size: 22px; color: #94A3B8; margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px;">
+            WSI Patch-Filtering: CPU → GPU Performance Study
+        </p>
+    </div>
+</div>
+
+
+</body></html>
