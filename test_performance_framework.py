@@ -80,21 +80,18 @@ IMPLEMENTATIONS: Dict[str, dict] = {
     "v20_ult_pread": dict(module="data_loader_v20_cuda_ultimate_pread", category="gpu", kwargs={"batch_size": 4096, "num_readers": os.cpu_count()}),
     "v21_ult_pipe": dict(module="data_loader_v21_cuda_ultimate_pipeline", category="gpu", kwargs={"batch_size": 4096, "num_readers": os.cpu_count()}),
     "v22_par_destuff": dict(module="data_loader_v22_cuda_parallel_destuff", category="gpu", kwargs={"batch_size": 4096, "num_readers": os.cpu_count()}),
-    "v23_dec_v1":     dict(module="data_loader_v23_dec_v1_naive",      category="gpu", kwargs={}),
-    "v24_dec_v2":     dict(module="data_loader_v24_dec_v2_batch",      category="gpu", kwargs={"batch_size": 0}),
-    "v25_dec_v3":     dict(module="data_loader_v25_dec_v3_hybrid",     category="gpu", kwargs={"batch_size": 4096, "gpu_threshold": 128}),
-    "v26_dec_v4":     dict(module="data_loader_v26_dec_v4_pinned",     category="gpu", kwargs={"batch_size": 4096}),
-    "v27_dec_v5":     dict(module="data_loader_v27_dec_v5_async",      category="gpu", kwargs={"batch_size": 4096}),
-    "v28_dec_v6":     dict(module="data_loader_v28_dec_v6_fp16",       category="gpu", kwargs={"batch_size": 4096}),
-    "v29_dec_v7":     dict(module="data_loader_v29_dec_v7_membudget",  category="gpu", kwargs={"vram_budget_gb": 8.0}),
-    "v30_dec_v8":     dict(module="data_loader_v30_dec_v8_threaded",   category="gpu", kwargs={"batch_size": 4096, "num_readers": os.cpu_count()}),
+    "v24_dec_v2":     dict(module="data_loader_v24_dec_v2_batch",      category="gpu", kwargs={"batch_size": 21760}),
+    "v25_dec_v3":     dict(module="data_loader_v25_dec_v3_hybrid",     category="gpu", kwargs={"batch_size": 21760, "gpu_threshold": 128}),
+    "v26_dec_v4":     dict(module="data_loader_v26_dec_v4_pinned",     category="gpu", kwargs={"batch_size": 21760}),
+    "v29_dec_v7":     dict(module="data_loader_v29_dec_v7_membudget",  category="gpu", kwargs={"vram_budget_gb": 31.0}),
+    "v30_dec_v8":     dict(module="data_loader_v30_dec_v8_threaded",   category="gpu", kwargs={"batch_size": 16384, "num_readers": os.cpu_count()}),
     "v31_dec_v9":     dict(module="data_loader_v31_dec_v9_combined",   category="gpu", kwargs={"batch_size": 4096, "num_readers": os.cpu_count()}),
     "v32_dec_v10":    dict(module="data_loader_v32_dec_v10_pipeline",  category="gpu", kwargs={"batch_size": 4096, "num_readers": os.cpu_count()}),
-}"""
-
+}
+"""
 
 CLASS_NAME = "WSISlidingWindowDataset"
-DEFAULT_WSI = "data/S114-82742C-Her2(4B5) 20x.tiff"   # smallest slide -> fast iteration
+DEFAULT_WSI = "data/S114-80954A-Her2(3+).tiff"   # smallest slide -> fast iteration
 
 
 def list_versions(category: Optional[str] = None) -> List[str]:
